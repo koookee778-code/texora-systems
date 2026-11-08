@@ -7,26 +7,8 @@ interface ScrollExperienceHeroProps {
   language: Language;
 }
 
-interface Waypoint {
-  p: number;      // Scroll progress [0..1]
-  x: number;      // -1.0 = Far Left, +1.0 = Far Right
-  y: number;      // 0.0 = Top/Center, 1.0 = Bottom descent
-  bank: number;   // 3D Roll angle (deg)
-  yaw: number;    // 3D Yaw angle (deg)
-  pitch: number;  // 3D Pitch angle (deg)
-}
-
 export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scrollY, language }) => {
   const isAr = language === 'ar';
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== 'undefined' ? window.innerWidth : 1440
-  );
-
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize, { passive: true });
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Typewriter effect for intro title
   const [typedTitle, setTypedTitle] = useState('');
@@ -65,7 +47,7 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
     return () => clearTimeout(delayTimer);
   }, [fullSubtitle]);
 
-  // Generous scroll track (5000px) providing ample dwell time
+  // Generous scroll track (5000px) providing smooth progression
   const heroHeight = 5000;
   const progress = Math.min(Math.max(scrollY / heroHeight, 0), 1);
 
@@ -76,6 +58,7 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
   const evadeTextOpacity = Math.max(1 - evadeFactor * 1.8, 0);
 
   // ================= 2. THE 5 PROGRESSIVE ARTICLES (0.12 to 0.62) =================
+  // Positioned on Left and Right sides while emblem descends in the Center
   const getArticleOpacity = (start: number, peak: number, end: number) => {
     if (progress < start || progress > end) return 0;
     if (progress <= peak) return (progress - start) / (peak - start);
@@ -88,98 +71,52 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
   const art4Opacity = getArticleOpacity(0.42, 0.47, 0.52); // Article 4: Physical Left
   const art5Opacity = getArticleOpacity(0.52, 0.57, 0.62); // Article 5: Physical Right
 
-  // ================= 3. 3D AERODYNAMIC WAYPOINTS (OPPOSITE TO TEXT & ARRIVES AT NAME) =================
-  // Rule:
-  // - When Text is on Physical RIGHT -> Emblem is on Physical LEFT (x: -1.0)
-  // - When Text is on Physical LEFT  -> Emblem is on Physical RIGHT (x: +1.0)
-  // - In the end, emblem docks smoothly to its final home (x: 0) to welcome the name
-  const waypoints: Waypoint[] = useMemo(() => [
-    { p: 0.00, x:  0.0, y: 0.00, bank:   0, yaw:   0, pitch:  0 },
-    { p: 0.10, x:  0.0, y: 0.00, bank:   0, yaw:   0, pitch:  0 },
-    // Article 1 is on RIGHT -> Emblem swoops FAR LEFT with 3D banking and yaw
-    { p: 0.17, x: -1.0, y: 0.25, bank: -20, yaw: -30, pitch: 12 },
-    // Crossing center towards Right for Article 2
-    { p: 0.22, x:  0.0, y: 0.46, bank:  16, yaw:  14, pitch:  6 },
-    // Article 2 is on LEFT -> Emblem swoops FAR RIGHT
-    { p: 0.27, x:  1.0, y: 0.62, bank:  20, yaw:  30, pitch: 10 },
-    // Crossing center towards Left for Article 3
-    { p: 0.32, x:  0.0, y: 0.74, bank: -16, yaw: -14, pitch:  6 },
-    // Article 3 is on RIGHT -> Emblem swoops FAR LEFT
-    { p: 0.37, x: -1.0, y: 0.85, bank: -20, yaw: -30, pitch: 10 },
-    // Crossing center towards Right for Article 4
-    { p: 0.42, x:  0.0, y: 0.92, bank:  16, yaw:  14, pitch:  6 },
-    // Article 4 is on LEFT -> Emblem swoops FAR RIGHT
-    { p: 0.47, x:  1.0, y: 0.96, bank:  20, yaw:  30, pitch:  8 },
-    // Crossing center towards Left for Article 5
-    { p: 0.52, x:  0.0, y: 0.98, bank: -16, yaw: -14, pitch:  6 },
-    // Article 5 is on RIGHT -> Emblem swoops FAR LEFT
-    { p: 0.57, x: -1.0, y: 1.00, bank: -18, yaw: -28, pitch:  6 },
-    // DOCKING INTO THE BRAND NAME: Emblem glides smoothly into the center slot
-    { p: 0.63, x: -0.5, y: 0.45, bank: -10, yaw: -15, pitch:  2 },
-    { p: 0.68, x:  0.0, y: 0.00, bank:   0, yaw:   0, pitch:  0 },
-    { p: 1.00, x:  0.0, y: 0.00, bank:   0, yaw:   0, pitch:  0 },
-  ], []);
-
-  // Smooth cosine easing interpolation
-  const flightState = useMemo(() => {
-    if (progress <= waypoints[0].p) return waypoints[0];
-    if (progress >= waypoints[waypoints.length - 1].p) return waypoints[waypoints.length - 1];
-
-    let i = 0;
-    while (i < waypoints.length - 1 && waypoints[i + 1].p < progress) {
-      i++;
-    }
-
-    const p0 = waypoints[i];
-    const p1 = waypoints[i + 1];
-    const range = p1.p - p0.p;
-    const t = range > 0 ? (progress - p0.p) / range : 0;
-    const ease = (1 - Math.cos(t * Math.PI)) / 2;
-
-    return {
-      p: progress,
-      x: p0.x + (p1.x - p0.x) * ease,
-      y: p0.y + (p1.y - p0.y) * ease,
-      bank: p0.bank + (p1.bank - p0.bank) * ease,
-      yaw: p0.yaw + (p1.yaw - p0.yaw) * ease,
-      pitch: p0.pitch + (p1.pitch - p0.pitch) * ease,
-    };
-  }, [progress, waypoints]);
-
-  // Generous lateral distance ensuring complete separation from text
-  const lateralBound = Math.min(Math.max(windowWidth * 0.35, 240), 480);
-  const verticalBound = 220;
-
-  const logoX = flightState.x * lateralBound;
-  const logoY = flightState.y * verticalBound;
-  const bankAngleZ = flightState.bank;
-  const yawAngleY = flightState.yaw;
-  const pitchAngleX = flightState.pitch;
-
-  // ================= 4. THE PURE WHITE STAGE (0.68 to 0.96) =================
+  // ================= 3. EMBLEM ALWAYS IN CENTER WITH 3D DESCENT & ROTATION =================
+  // User explicitly requested: "خلي الشعار دايماً في المنتصف"
+  // Horizontal X is ALWAYS 0! The emblem stays dead center while descending in Y.
+  const isTransitionToWhite = progress >= 0.62 && progress < 0.68;
   const isWhiteStage = progress >= 0.68;
-  const whiteStageOpacity = Math.min(Math.max((progress - 0.65) / 0.04, 0), 1);
+  const whiteStageOpacity = Math.min(Math.max((progress - 0.64) / 0.04, 0), 1);
   const heroFadeOut = progress > 0.96 ? Math.max(1 - (progress - 0.96) / 0.04, 0) : 1;
 
-  // ================= 5. SEQUENTIAL LETTER REVEAL (E-X-O-R-A) =================
-  // Triggers ONLY after the emblem docks at the name ("يوصل لحد الاسم بعدين يجي الاسم تتدريجي")
-  const [lettersRevealed, setLettersRevealed] = useState<number>(0);
+  // Vertical descent: descends during articles, then returns smoothly to exact center (Y = 0)
+  let logoY = 0;
+  let yawAngleY = 0;
+  let pitchAngleX = 0;
+  let bankAngleZ = 0;
 
-  useEffect(() => {
-    if (isWhiteStage) {
-      // Letters unfold sequentially from the continuous docked emblem
-      const timeouts = [
-        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 1)), 180), // 'E'
-        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 2)), 320), // 'X'
-        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 3)), 460), // 'O'
-        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 4)), 600), // 'R'
-        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 5)), 740), // 'A'
-      ];
-      return () => timeouts.forEach((t) => clearTimeout(t));
-    } else if (progress < 0.60) {
-      setLettersRevealed(0);
-    }
-  }, [isWhiteStage, progress < 0.60]);
+  if (progress < 0.12) {
+    // Intro center
+    logoY = 0;
+    yawAngleY = 0;
+    pitchAngleX = 0;
+    bankAngleZ = 0;
+  } else if (progress >= 0.12 && progress < 0.62) {
+    // Descent in the center corridor (0 to 220px) with 3D rotation
+    const t = (progress - 0.12) / 0.50; // 0 to 1
+    logoY = Math.sin(t * Math.PI * 0.5) * 200;
+    yawAngleY = Math.sin(t * Math.PI * 4) * 16;   // 3D periodic turn
+    pitchAngleX = Math.sin(t * Math.PI * 2) * 8;  // Descent pitch
+    bankAngleZ = Math.cos(t * Math.PI * 4) * 6;   // Gentle bank
+  } else if (isTransitionToWhite) {
+    // Returning smoothly to exact Y = 0 and 0 angles for laser-precise docking
+    const t = (progress - 0.62) / 0.06;
+    const ease = (1 - Math.cos(t * Math.PI)) / 2;
+    logoY = 200 * (1 - ease);
+    yawAngleY = 0;
+    pitchAngleX = 0;
+    bankAngleZ = 0;
+  } else {
+    // White Stage: Perfectly centered at 0 with 0 angles
+    logoY = 0;
+    yawAngleY = 0;
+    pitchAngleX = 0;
+    bankAngleZ = 0;
+  }
+
+  // ================= 4. FLUID STREAM OF LETTERS (تدفق الأحرف مش ظهور مفاجئ) =================
+  // Once entering the white stage, all letters flow in sequentially with smooth fluid animation
+  const letters = ['E', 'X', 'O', 'R', 'A'];
 
   return (
     <div className="relative w-full" style={{ height: `${heroHeight + 600}px` }}>
@@ -263,10 +200,12 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           </div>
         </div>
 
-        {/* ================= CHAPTER 2: THE 5 PROGRESSIVE ARTICLES (EXPLICIT SIDES) ================= */}
-        {/* PHYSICAL LEFT COLUMN (Articles 2 & 4) - Fixed to physical left */}
+        {/* ================= CHAPTER 2: THE 5 PROGRESSIVE ARTICLES (FLANKING SIDES) ================= */}
+        {/* Emblem stays locked in the center corridor while articles display on Left & Right */}
+        
+        {/* PHYSICAL LEFT COLUMN (Articles 2 & 4) */}
         <div 
-          className="absolute left-6 sm:left-12 lg:left-20 top-1/2 -translate-y-1/2 w-80 sm:w-96 pointer-events-none z-15 flex flex-col items-start space-y-8"
+          className="absolute left-6 sm:left-12 lg:left-24 top-1/2 -translate-y-1/2 w-72 sm:w-88 md:w-96 pointer-events-none z-15 flex flex-col items-start space-y-8"
           style={{ direction: isAr ? 'rtl' : 'ltr' }}
         >
           {/* Article 2: اللغات والترسانة التقنية */}
@@ -318,9 +257,9 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           )}
         </div>
 
-        {/* PHYSICAL RIGHT COLUMN (Articles 1, 3, 5) - Fixed to physical right */}
+        {/* PHYSICAL RIGHT COLUMN (Articles 1, 3, 5) */}
         <div 
-          className="absolute right-6 sm:right-12 lg:right-20 top-1/2 -translate-y-1/2 w-80 sm:w-96 pointer-events-none z-15 flex flex-col items-end space-y-8 text-right"
+          className="absolute right-6 sm:right-12 lg:right-24 top-1/2 -translate-y-1/2 w-72 sm:w-88 md:w-96 pointer-events-none z-15 flex flex-col items-end space-y-8 text-right"
           style={{ direction: isAr ? 'rtl' : 'ltr' }}
         >
           {/* Article 1: الجودة والدقة البرمجية */}
@@ -387,34 +326,33 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           )}
         </div>
 
-        {/* ================= CHAPTER 3: UNIFIED CONTINUOUS EMBLEM & SEQUENTIAL NAME ================= */}
+        {/* ================= CHAPTER 3: CENTERED EMBLEM + FLUID STREAM OF LETTERS ================= */}
         {/*
             Exact user request:
-            1. THE SAME EMBLEM continuously descends, dodges in 3D, and arrives at the name!
-            2. The emblem docks into its slot, THEN the letters of the name appear sequentially ("مش اسم جاهز").
-            3. Inverted direction: Text on Right -> Emblem on Left. Text on Left -> Emblem on Right.
-            4. Realistic 3D rotation with banking, yaw, and pitch.
-            5. Plain emblem integrated seamlessly into the site without distracting halos.
+            1. Emblem is ALWAYS IN THE CENTER horizontally (x = 0).
+            2. At the final name: Emblem is positioned with laser precision as 'T'.
+            3. Letters flow in smoothly and continuously ("يبدأ تدفق الأحرف مش ظهور مفاجئ").
+            4. The full name TEXORA is perfectly centered in the screen.
         */}
         <div 
           className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none select-none px-4"
           dir="ltr"
         >
-          {/* Centered Master Brand Unit */}
+          {/* Centered Brandmark Master Container */}
           <div className="relative flex items-center justify-center">
 
-            {/* 1. THE CONTINUOUS EMBLEM (Moves in 3D throughout the scroll, docks on the left) */}
+            {/* 1. THE EMBLEM: Always in the center horizontally, settles with laser precision */}
             <div
-              className="relative will-change-transform flex items-center justify-center select-none"
+              className="relative will-change-transform flex items-center justify-center select-none shrink-0"
               style={{
-                transform: `translate3d(${logoX}px, ${logoY}px, 0px) perspective(1000px) rotateX(${pitchAngleX}deg) rotateY(${yawAngleY}deg) rotateZ(${bankAngleZ}deg)`,
-                transition: isWhiteStage ? 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)' : 'transform 0.05s linear',
+                transform: `translate3d(0px, ${logoY}px, 0px) perspective(1000px) rotateX(${pitchAngleX}deg) rotateY(${yawAngleY}deg) rotateZ(${bankAngleZ}deg)`,
+                transition: isWhiteStage ? 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'transform 0.05s linear',
               }}
             >
               <img
                 src="/assets/texora-logo-clean-tight.png"
                 alt="Texora Emblem"
-                className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 object-contain"
+                className="w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 object-contain"
                 style={{
                   filter: isWhiteStage 
                     ? 'contrast(1.2) brightness(0.9) drop-shadow(0 14px 28px rgba(15,23,42,0.22))' 
@@ -423,9 +361,14 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
               />
             </div>
 
-            {/* 2. THE SEQUENTIAL LETTERS 'E X O R A' - Revealed gradually from the docked emblem */}
+            {/* 2. FLUID STREAM OF LETTERS 'E X O R A' */}
+            {/*
+                Smooth overlapping stream:
+                Each letter flows in with progressive slide-in, gradual opacity, and optical focus
+                creating a continuous typographic wave ("تدفق الأحرف مش ظهور مفاجئ")
+            */}
             <div 
-              className="flex items-center tracking-wider font-['Syne'] font-black text-5xl sm:text-7xl md:text-8xl lg:text-9xl text-[#02091d]"
+              className="flex items-center tracking-wider font-['Syne'] font-black text-5xl sm:text-7xl md:text-8xl lg:text-9xl text-[#02091d] shrink-0"
               style={{
                 width: isWhiteStage ? 'auto' : 0,
                 opacity: isWhiteStage ? 1 : 0,
@@ -433,20 +376,22 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
                 transition: 'opacity 0.4s ease',
               }}
             >
-              {['E', 'X', 'O', 'R', 'A'].map((char, index) => {
-                const isRevealed = isWhiteStage && lettersRevealed > index;
+              {letters.map((char, index) => {
+                // Staggered continuous flow delay
+                const delayMs = index * 140 + 120; // 120ms, 260ms, 400ms, 540ms, 680ms
                 return (
                   <span 
                     key={char}
-                    className={`transition-all duration-300 transform ${
-                      isRevealed 
-                        ? 'opacity-100 translate-y-0 scale-100' 
-                        : 'opacity-0 translate-y-6 scale-90'
-                    }`}
+                    className="inline-block transition-all transform"
                     style={{
-                      display: 'inline-block',
-                      marginLeft: index > 0 ? '0.12em' : '0.18em',
+                      marginLeft: index > 0 ? '0.12em' : '0.16em',
                       color: '#02091d',
+                      opacity: isWhiteStage ? 1 : 0,
+                      transform: isWhiteStage ? 'translateX(0px) scale(1)' : 'translateX(-28px) scale(0.9)',
+                      filter: isWhiteStage ? 'blur(0px)' : 'blur(6px)',
+                      transitionDuration: '550ms',
+                      transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
+                      transitionDelay: isWhiteStage ? `${delayMs}ms` : '0ms',
                     }}
                   >
                     {char}
