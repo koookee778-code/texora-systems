@@ -170,35 +170,32 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
         </div>
 
         {/* ================= CHAPTER 1: MONUMENTAL CENTRAL KEYNOTE HERO (APPLE / STRIPE / LINEAR STYLE) ================= */}
+        {/* Positioned at the upper half so the majestic 3D emblem sits proudly below it with zero overlap */}
         <div 
-          className="relative z-10 w-full max-w-5xl px-6 flex flex-col items-center text-center pointer-events-none transition-all duration-75"
+          className="absolute top-12 sm:top-16 md:top-20 z-10 w-full max-w-4xl px-6 flex flex-col items-center text-center pointer-events-none transition-all duration-75"
           style={{ 
             opacity: heroTextOpacity,
             transform: `translateY(${heroTextTranslateY}px)`,
           }}
         >
           {/* Status Capsule Badge */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 text-xs font-mono font-bold mb-6 tracking-widest uppercase backdrop-blur-md shadow-[0_0_20px_rgba(56,189,248,0.2)]">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-400/30 text-cyan-300 text-xs font-mono font-bold mb-4 tracking-widest uppercase backdrop-blur-md shadow-[0_0_20px_rgba(56,189,248,0.2)]">
             <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
-            <span>{isAr ? '✦ ترسانة هندسة الأنظمة والبرمجيات المتطورة' : '✦ NEXT-GEN ENTERPRISE SOFTWARE ARCHITECTURE'}</span>
+            <span>{isAr ? '✦ ترسانة هندسة الأنظمة والحلول البرمجية المتطورة' : '✦ NEXT-GEN ENTERPRISE SOFTWARE ARCHITECTURE'}</span>
           </div>
 
-          {/* Monumental Dual-Language Headline */}
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-['Syne'] text-white tracking-tight leading-none">
-            ARCHITECTS OF
-            <span className="block mt-1 text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-200 to-blue-500">
-              DIGITAL POWER
+          {/* Monumental Headline */}
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black font-['Syne'] text-white tracking-tight leading-tight">
+            TEXORA SYSTEMS
+            <span className="block mt-1 text-2xl sm:text-4xl md:text-5xl font-black font-['Cairo'] text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-200 to-blue-500">
+              {isAr ? 'صناعة القوة البرمجية للمؤسسات' : 'ARCHITECTS OF DIGITAL POWER'}
             </span>
           </h1>
 
-          <h2 className="mt-4 text-xl sm:text-2xl md:text-3xl font-extrabold font-['Cairo'] text-slate-100 max-w-2xl leading-snug">
-            {isAr ? 'هندسة البرمجيات الاستثنائية التي تقود نمو الشركات والمؤسسات' : 'We build high-performance software systems that scale and lead industries'}
-          </h2>
-
           <p className="mt-3 text-xs sm:text-sm text-sky-200/80 max-w-xl font-light leading-relaxed">
             {isAr 
-              ? 'أنظمة كاشير الصيدليات والمتاجر • منصات تعليمية تفاعلية بحماية DRM • حلول ويب وتطبيقات فائقة السرعة • وكلاء ذكاء اصطناعي 24/7'
-              : 'Omnichannel Retail POS • Pharmacy Systems with 25k SKUs • DRM-Protected LMS • 24/7 Autonomous AI Agents'}
+              ? 'أنظمة كاشير ومخازن للمحلات • سلاسل الصيدليات الكبرى • منصات تعليمية DRM • وكلاء ذكاء اصطناعي 24/7'
+              : 'Enterprise Pharmacy POS • Multi-Branch Retail • DRM Protected LMS • 24/7 Autonomous AI Agents'}
           </p>
         </div>
 
