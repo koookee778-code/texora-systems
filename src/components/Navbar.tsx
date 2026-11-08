@@ -24,8 +24,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Clean top bar: Kept completely hidden during the 3D scrollytelling so screen is 100% uncluttered!
-  const isScrolledPastHero = scrollY > 3100;
-  const isLogoDocked = scrollY > 3100;
+  const isScrolledPastHero = scrollY > 4400;
+  const isLogoDocked = scrollY > 4400;
 
   const navLinks = [
     { href: '#systems', labelAr: 'الأنظمة والحلول', labelEn: 'Systems' },

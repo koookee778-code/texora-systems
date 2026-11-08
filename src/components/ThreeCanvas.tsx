@@ -12,95 +12,84 @@ export const ThreeCanvas: React.FC<ThreeCanvasProps> = ({ scrollY }) => {
     const mount = mountRef.current;
     if (!mount) return;
 
-    // Deep Royal Blue Fog & Scene
+    // Detect lower end / mobile
+    const isLowPower = window.navigator.hardwareConcurrency ? window.navigator.hardwareConcurrency <= 4 : false;
+
+    // Scene with deep royal blue fog
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x02091d, 0.0015);
+    scene.fog = new THREE.FogExp2(0x02091d, 0.0016);
 
     const camera = new THREE.PerspectiveCamera(
-      65,
+      60,
       window.innerWidth / window.innerHeight,
       0.1,
-      1200
+      1000
     );
-    camera.position.z = 90;
-    camera.position.y = 0;
+    camera.position.z = 85;
 
     const renderer = new THREE.WebGLRenderer({
       alpha: true,
-      antialias: true,
+      antialias: !isLowPower,
       powerPreference: 'high-performance',
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isLowPower ? 1 : 1.5));
     mount.appendChild(renderer.domElement);
 
-    // ================= 1. GEOMETRIC WIREFRAME PERSPECTIVE FLOOR =================
-    const gridHelper = new THREE.GridHelper(300, 40, 0x38bdf8, 0x1e3a8a);
-    gridHelper.position.y = -45;
+    // ================= 1. LIGHTWEIGHT GEOMETRIC WIREFRAME PERSPECTIVE =================
+    // Floor Grid
+    const gridHelper = new THREE.GridHelper(260, 26, 0x38bdf8, 0x1e3a8a);
+    gridHelper.position.y = -40;
     (gridHelper.material as THREE.Material).transparent = true;
-    (gridHelper.material as THREE.Material).opacity = 0.35;
+    (gridHelper.material as THREE.Material).opacity = 0.3;
     scene.add(gridHelper);
 
-    // Geometric Wireframe Ceiling
-    const ceilingGrid = new THREE.GridHelper(300, 40, 0x60a5fa, 0x172554);
-    ceilingGrid.position.y = 45;
+    // Ceiling Grid
+    const ceilingGrid = new THREE.GridHelper(260, 26, 0x60a5fa, 0x172554);
+    ceilingGrid.position.y = 40;
     (ceilingGrid.material as THREE.Material).transparent = true;
-    (ceilingGrid.material as THREE.Material).opacity = 0.22;
+    (ceilingGrid.material as THREE.Material).opacity = 0.2;
     scene.add(ceilingGrid);
 
-    // ================= 2. FLOATING GEOMETRIC WIREFRAME POLYHEDRA =================
-    // Large Icosahedron
-    const icoGeo = new THREE.IcosahedronGeometry(18, 1);
+    // ================= 2. GEOMETRIC POLYHEDRA (Low poly for extreme smoothness) =================
+    const icoGeo = new THREE.IcosahedronGeometry(15, 0);
     const icoMat = new THREE.MeshBasicMaterial({
       color: 0x38bdf8,
       wireframe: true,
       transparent: true,
-      opacity: 0.25,
+      opacity: 0.22,
     });
     const icoMesh = new THREE.Mesh(icoGeo, icoMat);
-    icoMesh.position.set(-45, 10, -30);
+    icoMesh.position.set(-42, 8, -25);
     scene.add(icoMesh);
 
-    // Rotating Octahedron
-    const octGeo = new THREE.OctahedronGeometry(14, 0);
+    const octGeo = new THREE.OctahedronGeometry(12, 0);
     const octMat = new THREE.MeshBasicMaterial({
       color: 0x60a5fa,
       wireframe: true,
       transparent: true,
-      opacity: 0.28,
+      opacity: 0.25,
     });
     const octMesh = new THREE.Mesh(octGeo, octMat);
-    octMesh.position.set(48, -12, -20);
+    octMesh.position.set(45, -10, -20);
     scene.add(octMesh);
 
-    // Concentric Cybernetic Rings
-    const ringGeo = new THREE.TorusGeometry(36, 0.4, 16, 120);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0x0284c7,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.2,
-    });
-    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
-    ringMesh.rotation.x = Math.PI / 2.5;
-    scene.add(ringMesh);
-
-    // ================= 3. CONNECTED GEOMETRIC STARFIELD & NODES =================
-    const particleCount = 800;
+    // ================= 3. OPTIMIZED STARFIELD =================
+    const particleCount = isLowPower ? 350 : 550;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
 
     const cCyan = new THREE.Color(0x38bdf8);
     const cRoyal = new THREE.Color(0x60a5fa);
-    const cLight = new THREE.Color(0xdbeafe);
+    const cWhite = new THREE.Color(0xffffff);
 
     for (let i = 0; i < particleCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 400;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 350;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 400;
+      positions[i * 3] = (Math.random() - 0.5) * 350;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 300;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 350;
 
-      const c = i % 3 === 0 ? cCyan : i % 3 === 1 ? cRoyal : cLight;
+      const c = i % 3 === 0 ? cCyan : i % 3 === 1 ? cRoyal : cWhite;
       colors[i * 3] = c.r;
       colors[i * 3 + 1] = c.g;
       colors[i * 3 + 2] = c.b;
@@ -110,34 +99,34 @@ export const ThreeCanvas: React.FC<ThreeCanvasProps> = ({ scrollY }) => {
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: 2.2,
+      size: 2.0,
       vertexColors: true,
       transparent: true,
-      opacity: 0.75,
+      opacity: 0.7,
       blending: THREE.AdditiveBlending,
     });
 
     const particles = new THREE.Points(geometry, material);
     scene.add(particles);
 
-    // Mouse Tracking
+    // Mouse Tracking with smooth interpolation
     let mouseX = 0;
     let mouseY = 0;
     let targetX = 0;
     let targetY = 0;
 
     const handleMouseMove = (e: MouseEvent) => {
-      mouseX = (e.clientX - window.innerWidth / 2) * 0.04;
-      mouseY = (e.clientY - window.innerHeight / 2) * 0.04;
+      mouseX = (e.clientX - window.innerWidth / 2) * 0.03;
+      mouseY = (e.clientY - window.innerHeight / 2) * 0.03;
     };
-    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
 
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     };
-    window.addEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { passive: true });
 
     // Animation Loop
     let animationFrameId: number;
@@ -147,30 +136,22 @@ export const ThreeCanvas: React.FC<ThreeCanvasProps> = ({ scrollY }) => {
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Smooth mouse lerp
       targetX += (mouseX - targetX) * 0.05;
       targetY += (mouseY - targetY) * 0.05;
 
-      // Rotate geometric objects
-      icoMesh.rotation.x = elapsedTime * 0.12;
-      icoMesh.rotation.y = elapsedTime * 0.18;
+      icoMesh.rotation.x = elapsedTime * 0.1;
+      icoMesh.rotation.y = elapsedTime * 0.14;
 
-      octMesh.rotation.y = -elapsedTime * 0.2;
-      octMesh.rotation.z = elapsedTime * 0.15;
+      octMesh.rotation.y = -elapsedTime * 0.16;
+      octMesh.rotation.z = elapsedTime * 0.12;
 
-      ringMesh.rotation.z = elapsedTime * 0.05;
+      gridHelper.position.z = (elapsedTime * 6) % 20;
+      ceilingGrid.position.z = (elapsedTime * 6) % 20;
 
-      // Grid flowing movement (Infinite highway effect)
-      gridHelper.position.z = (elapsedTime * 8) % 20;
-      ceilingGrid.position.z = (elapsedTime * 8) % 20;
+      particles.rotation.y = elapsedTime * 0.015 + targetX * 0.001;
 
-      // Particle constellation rotation
-      particles.rotation.y = elapsedTime * 0.02 + targetX * 0.001;
-      particles.rotation.x = elapsedTime * 0.01 + targetY * 0.001;
-
-      // Camera responds smoothly to scroll
-      camera.position.y = -(scrollY * 0.025);
-      camera.position.x = targetX * 0.4;
+      camera.position.y = -(scrollY * 0.02);
+      camera.position.x = targetX * 0.3;
 
       renderer.render(scene, camera);
     };
@@ -190,8 +171,6 @@ export const ThreeCanvas: React.FC<ThreeCanvasProps> = ({ scrollY }) => {
       icoMat.dispose();
       octGeo.dispose();
       octMat.dispose();
-      ringGeo.dispose();
-      ringMat.dispose();
       renderer.dispose();
     };
   }, []);
@@ -199,7 +178,7 @@ export const ThreeCanvas: React.FC<ThreeCanvasProps> = ({ scrollY }) => {
   return (
     <div
       ref={mountRef}
-      className="fixed inset-0 pointer-events-none z-0 overflow-hidden"
+      className="fixed inset-0 pointer-events-none z-0 overflow-hidden will-change-transform"
       aria-hidden="true"
     />
   );
