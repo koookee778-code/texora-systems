@@ -9,27 +9,21 @@ interface ScrollExperienceHeroProps {
 
 interface Waypoint {
   p: number;      // Scroll progress [0..1]
-  x: number;      // Horizontal offset (-1 to +1 normalized)
-  y: number;      // Vertical descent (-0.1 to +1 normalized)
+  x: number;      // Horizontal offset (-1.0 = Far Left, +1.0 = Far Right)
+  y: number;      // Vertical descent (0 = top/center, 1 = maximum descent)
   bank: number;   // 3D Roll angle (deg)
   yaw: number;    // 3D Yaw angle (deg)
-  pitch: number;  // 3D Pitch angle (deg)
-  z: number;      // 3D Depth forward/back (px)
 }
 
 export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scrollY, language }) => {
   const isAr = language === 'ar';
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [windowSize, setWindowSize] = useState({
-    w: typeof window !== 'undefined' ? window.innerWidth : 1440,
-    h: typeof window !== 'undefined' ? window.innerHeight : 900
-  });
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1440
+  );
 
-  // Track window resize for responsive flight trajectory
+  // Track resize with debouncing for performance
   useEffect(() => {
-    const handleResize = () => {
-      setWindowSize({ w: window.innerWidth, h: window.innerHeight });
-    };
+    const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize, { passive: true });
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -50,7 +44,7 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
       } else {
         clearInterval(timer);
       }
-    }, 45);
+    }, 40);
     return () => clearInterval(timer);
   }, []);
 
@@ -65,78 +59,68 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
         } else {
           clearInterval(subTimer);
         }
-      }, 35);
+      }, 30);
       return () => clearInterval(subTimer);
-    }, 600);
+    }, 500);
     return () => clearTimeout(delayTimer);
   }, [fullSubtitle]);
 
-  // Gentle reactive mouse tracking for subtle 3D tilt
-  useEffect(() => {
-    const handleMouse = (e: MouseEvent) => {
-      const { innerWidth, innerHeight } = window;
-      setMousePos({
-        x: (e.clientX - innerWidth / 2) / (innerWidth / 2),
-        y: (e.clientY - innerHeight / 2) / (innerHeight / 2),
-      });
-    };
-    window.addEventListener('mousemove', handleMouse, { passive: true });
-    return () => window.removeEventListener('mousemove', handleMouse);
-  }, []);
-
-  // Generous scroll track (5000px) providing ample dwell time for every phase
+  // Total scroll track (5000px) providing ample room for every stage
   const heroHeight = 5000;
   const progress = Math.min(Math.max(scrollY / heroHeight, 0), 1);
 
   // ================= 1. INTRO TEXT EVASION (0 to 0.12) =================
   const evadeFactor = Math.min(progress / 0.10, 1);
-  const leftTextTranslateX = -evadeFactor * 220;
-  const rightTextTranslateX = evadeFactor * 220;
+  const leftTextTranslateX = -evadeFactor * 240;
+  const rightTextTranslateX = evadeFactor * 240;
   const evadeTextOpacity = Math.max(1 - evadeFactor * 1.8, 0);
 
-  // ================= 2. THE 5 PROGRESSIVE ARTICLES (0.12 to 0.64) =================
-  const getCardOpacity = (start: number, peak: number, end: number) => {
+  // ================= 2. THE 5 PROGRESSIVE ARTICLES (0.12 to 0.62) =================
+  // Non-overlapping visibility windows so text is always clear
+  const getArticleOpacity = (start: number, peak: number, end: number) => {
     if (progress < start || progress > end) return 0;
     if (progress <= peak) return (progress - start) / (peak - start);
     return 1 - (progress - peak) / (end - peak);
   };
 
-  const art1Opacity = getCardOpacity(0.12, 0.17, 0.23); // Article 1: Right
-  const art2Opacity = getCardOpacity(0.22, 0.27, 0.33); // Article 2: Left
-  const art3Opacity = getCardOpacity(0.32, 0.37, 0.43); // Article 3: Right
-  const art4Opacity = getCardOpacity(0.42, 0.47, 0.53); // Article 4: Left
-  const art5Opacity = getCardOpacity(0.52, 0.57, 0.63); // Article 5: Right
+  const art1Opacity = getArticleOpacity(0.12, 0.17, 0.22); // Article 1: Right
+  const art2Opacity = getArticleOpacity(0.22, 0.27, 0.32); // Article 2: Left
+  const art3Opacity = getArticleOpacity(0.32, 0.37, 0.42); // Article 3: Right
+  const art4Opacity = getArticleOpacity(0.42, 0.47, 0.52); // Article 4: Left
+  const art5Opacity = getArticleOpacity(0.52, 0.57, 0.62); // Article 5: Right
 
-  // ================= 3. ADVANCED 3D FLIGHT DYNAMICS & AERODYNAMIC DODGING =================
-  // Defines a continuous, aerodynamic 3D flight trajectory with banking, yaw, pitch, and depth
+  // ================= 3. EMBLEM TRAJECTORY (FAR FROM TEXT & ENDS ON THE LEFT) =================
+  // - Starts dead center
+  // - Moves FAR to the opposite side of each article (never overlapping words!)
+  // - In the end, arrives on the LEFT before the name appears ("وفي الاخر يوصل للشمال قبل ظهرو الاسم")
   const waypoints: Waypoint[] = useMemo(() => [
-    { p: 0.00, x:  0.0, y:  0.0, bank:   0, yaw:   0, pitch:  0, z:  0 },
-    { p: 0.10, x:  0.0, y:  0.0, bank:   0, yaw:   0, pitch:  0, z:  0 },
-    // Article 1 (Right): Emblem swoops DOWN-LEFT with aggressive 3D bank and yaw
-    { p: 0.17, x: -0.9, y:  0.35, bank: -24, yaw: -32, pitch: 14, z: 35 },
-    // Crossing center towards Right for Article 2
-    { p: 0.22, x:  0.0, y:  0.55, bank:  18, yaw:  15, pitch:  8, z: 65 },
-    // Article 2 (Left): Emblem swoops DOWN-RIGHT
-    { p: 0.27, x:  0.9, y:  0.70, bank:  24, yaw:  32, pitch: 12, z: 35 },
-    // Crossing center towards Left for Article 3
-    { p: 0.32, x:  0.0, y:  0.80, bank: -18, yaw: -15, pitch:  8, z: 65 },
-    // Article 3 (Right): Emblem swoops DOWN-LEFT
-    { p: 0.37, x: -0.9, y:  0.88, bank: -24, yaw: -32, pitch: 10, z: 35 },
-    // Crossing center towards Right for Article 4
-    { p: 0.42, x:  0.0, y:  0.93, bank:  18, yaw:  15, pitch:  6, z: 65 },
-    // Article 4 (Left): Emblem swoops DOWN-RIGHT
-    { p: 0.47, x:  0.9, y:  0.96, bank:  24, yaw:  32, pitch:  8, z: 35 },
-    // Crossing center towards Left for Article 5
-    { p: 0.52, x:  0.0, y:  0.98, bank: -18, yaw: -15, pitch:  6, z: 65 },
-    // Article 5 (Right): Emblem swoops DOWN-LEFT
-    { p: 0.57, x: -0.9, y:  1.00, bank: -22, yaw: -30, pitch:  6, z: 35 },
-    // Smooth transition pulling up and returning to center for White Stage
-    { p: 0.63, x: -0.4, y:  0.50, bank: -12, yaw: -16, pitch:  2, z: 20 },
-    { p: 0.68, x:  0.0, y:  0.00, bank:   0, yaw:   0, pitch:  0, z:  0 },
-    { p: 1.00, x:  0.0, y:  0.00, bank:   0, yaw:   0, pitch:  0, z:  0 },
+    { p: 0.00, x:  0.0, y:  0.00, bank:   0, yaw:   0 },
+    { p: 0.10, x:  0.0, y:  0.00, bank:   0, yaw:   0 },
+    // Article 1 is on RIGHT -> Emblem goes FAR to the LEFT
+    { p: 0.17, x: -1.0, y:  0.22, bank: -16, yaw: -20 },
+    // Crossing center towards Right
+    { p: 0.22, x:  0.0, y:  0.42, bank:  12, yaw:  10 },
+    // Article 2 is on LEFT -> Emblem goes FAR to the RIGHT
+    { p: 0.27, x:  1.0, y:  0.58, bank:  16, yaw:  20 },
+    // Crossing center towards Left
+    { p: 0.32, x:  0.0, y:  0.72, bank: -12, yaw: -10 },
+    // Article 3 is on RIGHT -> Emblem goes FAR to the LEFT
+    { p: 0.37, x: -1.0, y:  0.84, bank: -16, yaw: -20 },
+    // Crossing center towards Right
+    { p: 0.42, x:  0.0, y:  0.92, bank:  12, yaw:  10 },
+    // Article 4 is on LEFT -> Emblem goes FAR to the RIGHT
+    { p: 0.47, x:  1.0, y:  0.97, bank:  16, yaw:  20 },
+    // Crossing center towards Left
+    { p: 0.52, x:  0.0, y:  0.99, bank: -12, yaw: -10 },
+    // Article 5 is on RIGHT -> Emblem goes FAR to the LEFT
+    { p: 0.57, x: -1.0, y:  1.00, bank: -16, yaw: -20 },
+    // PREPARING FOR WHITE STAGE: Glides to the LEFT side of the brand name ("يوصل للشمال قبل ظهور الاسم")
+    { p: 0.63, x: -0.65, y: 0.40, bank:  -8, yaw: -10 },
+    { p: 0.67, x: -0.40, y: 0.00, bank:   0, yaw:   0 },
+    { p: 1.00, x: -0.40, y: 0.00, bank:   0, yaw:   0 },
   ], []);
 
-  // Continuous smooth Hermite/Cosine interpolation through waypoints
+  // Smooth cosine easing interpolation through waypoints
   const flightState = useMemo(() => {
     if (progress <= waypoints[0].p) return waypoints[0];
     if (progress >= waypoints[waypoints.length - 1].p) return waypoints[waypoints.length - 1];
@@ -150,7 +134,6 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
     const p1 = waypoints[i + 1];
     const range = p1.p - p0.p;
     const t = range > 0 ? (progress - p0.p) / range : 0;
-    // Cosine smoothing for zero-jerk acceleration
     const ease = (1 - Math.cos(t * Math.PI)) / 2;
 
     return {
@@ -159,81 +142,66 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
       y: p0.y + (p1.y - p0.y) * ease,
       bank: p0.bank + (p1.bank - p0.bank) * ease,
       yaw: p0.yaw + (p1.yaw - p0.yaw) * ease,
-      pitch: p0.pitch + (p1.pitch - p0.pitch) * ease,
-      z: p0.z + (p1.z - p0.z) * ease,
     };
   }, [progress, waypoints]);
 
-  // Responsive lateral & vertical pixel bounds
-  const lateralBound = Math.min(Math.max(windowSize.w * 0.26, 180), 340);
-  const verticalBound = Math.min(Math.max(windowSize.h * 0.28, 140), 260);
+  // Generous lateral distance so the emblem is completely far from the text
+  const lateralBound = Math.min(Math.max(windowWidth * 0.34, 220), 460);
+  const verticalBound = 220; // Natural descent height
 
   const logoX = flightState.x * lateralBound;
   const logoY = flightState.y * verticalBound;
   const bankAngleZ = flightState.bank;
-  const yawAngleY = flightState.yaw + mousePos.x * 8;
-  const pitchAngleX = flightState.pitch + mousePos.y * -6;
-  const depthZ = flightState.z;
+  const yawAngleY = flightState.yaw;
 
   // ================= 4. THE PURE WHITE STAGE (0.68 to 0.96) =================
-  // White stage lasts across 1400px of scrolling for an extended, comfortable dwell
   const isWhiteStage = progress >= 0.68;
-  const whiteStageOpacity = Math.min(Math.max((progress - 0.65) / 0.05, 0), 1);
+  const whiteStageOpacity = Math.min(Math.max((progress - 0.65) / 0.04, 0), 1);
   const heroFadeOut = progress > 0.96 ? Math.max(1 - (progress - 0.96) / 0.04, 0) : 1;
 
-  // ================= 5. AUTOMATIC SEQUENTIAL LETTER REVEAL (LOAD ON ARRIVAL) =================
-  // Once the user reaches the white stage, all 5 letters E-X-O-R-A reveal smoothly
-  // and sequentially automatically, locking in place permanently!
+  // ================= 5. AUTOMATIC SEQUENTIAL LETTER REVEAL =================
+  // Once entering the white stage, all 5 letters E-X-O-R-A reveal sequentially
+  // and smoothly automatically beside the emblem on the left!
   const [lettersRevealed, setLettersRevealed] = useState<number>(0);
 
   useEffect(() => {
     if (isWhiteStage) {
-      // Automatic staggered cascade: E -> X -> O -> R -> A
       const timeouts = [
-        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 1)), 120),
-        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 2)), 260),
-        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 3)), 400),
-        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 4)), 540),
-        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 5)), 680),
+        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 1)), 100),
+        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 2)), 220),
+        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 3)), 340),
+        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 4)), 460),
+        setTimeout(() => setLettersRevealed((prev) => Math.max(prev, 5)), 580),
       ];
       return () => timeouts.forEach((t) => clearTimeout(t));
     } else if (progress < 0.60) {
-      // Only reset if user scrolls well back up into the blue stage
       setLettersRevealed(0);
     }
   }, [isWhiteStage, progress < 0.60]);
 
   return (
     <div className="relative w-full" style={{ height: `${heroHeight + 600}px` }}>
-      {/* Sticky Fullscreen Frame */}
+      {/* Sticky Fullscreen Frame - GPU hardware accelerated */}
       <div 
         className="sticky top-0 h-screen w-full overflow-hidden flex flex-col justify-center items-center select-none will-change-transform"
         style={{ opacity: heroFadeOut }}
       >
         
-        {/* ================= BACKGROUND 1: ROYAL BLUE WITH GEOMETRIC WIREFRAME ================= */}
+        {/* ================= BACKGROUND 1: ROYAL BLUE WITH GEOMETRIC GRID ================= */}
         <div 
-          className="absolute inset-0 bg-[#02091d] transition-opacity duration-700 pointer-events-none"
+          className="absolute inset-0 bg-[#02091d] transition-opacity duration-500 pointer-events-none"
           style={{ opacity: 1 - whiteStageOpacity }}
         >
-          {/* Royal Blue Radial Core */}
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_50%,#0c2d6b_0%,#04163d_50%,#02091d_100%)] opacity-95" />
-
-          {/* Geometric Grid Overlay */}
-          <div className="absolute inset-0 geometric-grid opacity-35" />
-
-          {/* Cyan Glow Orbs */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] h-[750px] bg-cyan-500/15 rounded-full blur-[140px] pointer-events-none" />
+          <div className="absolute inset-0 geometric-grid opacity-30" />
         </div>
 
         {/* ================= BACKGROUND 2: PURE RADIANT WHITE CANVAS ================= */}
-        {/* Only pure white and the brand name dead center! */}
         <div 
-          className="absolute inset-0 bg-white transition-opacity duration-700 pointer-events-none"
+          className="absolute inset-0 bg-white transition-opacity duration-500 pointer-events-none"
           style={{ opacity: whiteStageOpacity }}
         >
-          {/* Subtle light geometric grid on white */}
-          <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:32px_32px] opacity-25" />
+          <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:32px_32px] opacity-35" />
         </div>
 
         {/* ================= CHAPTER 1: INTRO FLANKING TEXTS ================= */}
@@ -245,7 +213,6 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
             style={{ 
               transform: `translateX(${leftTextTranslateX}%)`,
               opacity: evadeTextOpacity,
-              filter: `blur(${evadeFactor * 8}px)`
             }}
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-400/30 text-cyan-300 text-xs font-mono font-bold mb-3 tracking-widest uppercase">
@@ -263,7 +230,7 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
             </p>
           </div>
 
-          {/* Center Clearance for 3D Emblem */}
+          {/* Center Clearance for Emblem */}
           <div className="w-2/12" />
 
           {/* Right Block (Dodges far to the Right) */}
@@ -272,7 +239,6 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
             style={{ 
               transform: `translateX(${rightTextTranslateX}%)`,
               opacity: evadeTextOpacity,
-              filter: `blur(${evadeFactor * 8}px)`
             }}
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-sky-300 text-xs font-mono font-bold mb-3 tracking-widest uppercase">
@@ -295,24 +261,21 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           </div>
         </div>
 
-        {/* ================= CHAPTER 2: THE 5 PROGRESSIVE ARTICLES (NO BOXES / DIRECT CLEAN TYPOGRAPHY) ================= */}
-        {/* Written directly on the page background without containers */}
+        {/* ================= CHAPTER 2: THE 5 PROGRESSIVE ARTICLES (FAR FROM EMBLEM) ================= */}
+        {/* Written directly on the page background, pushed to edges for zero collision */}
         <div className="absolute inset-0 z-15 pointer-events-none max-w-7xl mx-auto px-6 sm:px-12 flex items-center justify-between">
           
           {/* LEFT COLUMN ARTICLES (Articles 2 & 4) */}
-          <div className="w-5/12 flex flex-col items-start space-y-8 text-left">
+          <div className="w-4/12 flex flex-col items-start space-y-8 text-left">
             
             {/* Article 2: اللغات والترسانة التقنية */}
             {art2Opacity > 0 && (
               <div 
-                className="transition-all duration-300 max-w-md"
-                style={{ 
-                  opacity: art2Opacity,
-                  transform: `translateY(${(1 - art2Opacity) * 20}px)`
-                }}
+                className="transition-opacity duration-200 max-w-sm"
+                style={{ opacity: art2Opacity }}
               >
                 <div className="text-xs font-mono font-bold text-cyan-400 tracking-widest uppercase mb-1 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-cyan-400" />
                   <span>{isAr ? '02 // اللغات المستخدمة والترسانة' : '02 // Modern Languages & Stack'}</span>
                 </div>
                 <h3 className="text-2xl md:text-3xl font-black text-white font-['Cairo'] mb-2 leading-tight">
@@ -335,14 +298,11 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
             {/* Article 4: الخبرة البرمجية وسابقة الأعمال */}
             {art4Opacity > 0 && (
               <div 
-                className="transition-all duration-300 max-w-md"
-                style={{ 
-                  opacity: art4Opacity,
-                  transform: `translateY(${(1 - art4Opacity) * 20}px)`
-                }}
+                className="transition-opacity duration-200 max-w-sm"
+                style={{ opacity: art4Opacity }}
               >
                 <div className="text-xs font-mono font-bold text-cyan-400 tracking-widest uppercase mb-1 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-cyan-400" />
                   <span>{isAr ? '04 // الخبرة البرمجية وسابقة الأعمال' : '04 // Battle-Tested Experience'}</span>
                 </div>
                 <h3 className="text-2xl md:text-3xl font-black text-white font-['Cairo'] mb-2 leading-tight">
@@ -358,24 +318,21 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
 
           </div>
 
-          {/* CENTER CLEARANCE FOR 3D EMBLEM */}
-          <div className="w-2/12" />
+          {/* CENTER PASSAGE: Generous clear space */}
+          <div className="w-4/12" />
 
           {/* RIGHT COLUMN ARTICLES (Articles 1, 3, 5) */}
-          <div className="w-5/12 flex flex-col items-end space-y-8 text-right">
+          <div className="w-4/12 flex flex-col items-end space-y-8 text-right">
             
             {/* Article 1: الجودة والدقة البرمجية */}
             {art1Opacity > 0 && (
               <div 
-                className="transition-all duration-300 max-w-md"
-                style={{ 
-                  opacity: art1Opacity,
-                  transform: `translateY(${(1 - art1Opacity) * 20}px)`
-                }}
+                className="transition-opacity duration-200 max-w-sm"
+                style={{ opacity: art1Opacity }}
               >
                 <div className="text-xs font-mono font-bold text-cyan-400 tracking-widest uppercase mb-1 flex items-center justify-end gap-2">
                   <span>{isAr ? '01 // الجودة والدقة البرمجية' : '01 // Quality & Engineering Precision'}</span>
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-cyan-400" />
                 </div>
                 <h3 className="text-2xl md:text-3xl font-black text-white font-['Cairo'] mb-2 leading-tight">
                   {isAr ? 'معايير أمان صارمة وهندسة بلا ثغرات' : 'Zero-Defect Standard & Security'}
@@ -391,15 +348,12 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
             {/* Article 3: مدة الإنجاز والتسليم في أسبوعين */}
             {art3Opacity > 0 && (
               <div 
-                className="transition-all duration-300 max-w-md"
-                style={{ 
-                  opacity: art3Opacity,
-                  transform: `translateY(${(1 - art3Opacity) * 20}px)`
-                }}
+                className="transition-opacity duration-200 max-w-sm"
+                style={{ opacity: art3Opacity }}
               >
                 <div className="text-xs font-mono font-bold text-emerald-400 tracking-widest uppercase mb-1 flex items-center justify-end gap-2">
                   <span>{isAr ? '03 // مدة الإنجاز: خلال أسبوعين فقط' : '03 // Rapid 14-Day Delivery'}</span>
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
                 </div>
                 <h3 className="text-2xl md:text-3xl font-black text-white font-['Cairo'] mb-2 leading-tight">
                   {isAr ? 'نظامك مبرمج وجاهز للتشغيل في 14 يوماً' : 'Production-Ready Within 14 Days'}
@@ -415,15 +369,12 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
             {/* Article 5: السرعة الفائقة وسرعة الرد */}
             {art5Opacity > 0 && (
               <div 
-                className="transition-all duration-300 max-w-md"
-                style={{ 
-                  opacity: art5Opacity,
-                  transform: `translateY(${(1 - art5Opacity) * 20}px)`
-                }}
+                className="transition-opacity duration-200 max-w-sm"
+                style={{ opacity: art5Opacity }}
               >
                 <div className="text-xs font-mono font-bold text-cyan-400 tracking-widest uppercase mb-1 flex items-center justify-end gap-2">
                   <span>{isAr ? '05 // السرعة الخارقة وسرعة الرد' : '05 // Velocity & Instant Response'}</span>
-                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                  <span className="w-2 h-2 rounded-full bg-cyan-400" />
                 </div>
                 <h3 className="text-2xl md:text-3xl font-black text-white font-['Cairo'] mb-2 leading-tight">
                   {isAr ? 'استجابة 18ms وبوت واتساب ذكي 24/7' : '18ms Edge Latency & 2s Bot Replies'}
@@ -440,186 +391,77 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
 
         </div>
 
-        {/* ================= CHAPTER 3A: THE 3D AERODYNAMIC DODGING EMBLEM (BLUE STAGE) ================= */}
-        {/* Active while in the Blue Stage (< 0.68) */}
+        {/* ================= CHAPTER 3A: CLEAN, SIMPLE EMBLEM IN FLIGHT (BLUE STAGE) ================= */}
+        {/* Plain & seamless without distracting background glows, ultra-smooth 60 FPS */}
         {!isWhiteStage && (
           <div 
             className="absolute z-20 flex items-center justify-center pointer-events-none will-change-transform"
             style={{
-              transform: `translate3d(${logoX}px, ${logoY}px, ${depthZ}px) perspective(1200px) rotateX(${pitchAngleX}deg) rotateY(${yawAngleY}deg) rotateZ(${bankAngleZ}deg)`,
-              transition: 'transform 0.08s cubic-bezier(0.2, 0.8, 0.4, 1)',
+              transform: `translate3d(${logoX}px, ${logoY}px, 0px) rotateY(${yawAngleY}deg) rotateZ(${bankAngleZ}deg)`,
+              transition: 'transform 0.06s linear',
             }}
           >
-            <div className="relative flex items-center justify-center">
-              
-              {/* Floor projection shadow: tilts and moves with banking */}
-              <div 
-                className="absolute -bottom-14 w-48 h-8 rounded-full bg-cyan-500/25 blur-xl pointer-events-none transition-all duration-100"
-                style={{
-                  transform: `scale(${1 - depthZ * 0.003}) translateX(${-logoX * 0.12}px) skewX(${-bankAngleZ * 0.8}deg)`,
-                  opacity: Math.max(0.65 - (logoY / verticalBound) * 0.25, 0.2),
-                }}
-              />
-
-              {/* Aerodynamic Plasma Thruster / Wake: illuminates opposite to dodge direction */}
-              <div 
-                className="absolute -inset-6 rounded-full pointer-events-none transition-all duration-150"
-                style={{
-                  filter: 'blur(16px)',
-                  background: bankAngleZ !== 0
-                    ? `radial-gradient(ellipse at ${bankAngleZ < 0 ? '75% 50%' : '25% 50%'}, rgba(56,189,248,0.55), transparent 70%)`
-                    : 'radial-gradient(circle, rgba(56,189,248,0.35), transparent 70%)',
-                  opacity: 0.85,
-                }}
-              />
-
-              {/* Cyan ambient core aura */}
-              <div className="absolute -inset-10 rounded-full blur-3xl bg-cyan-400/35 opacity-75 animate-pulse" />
-
-              {/* 3D Multi-Layer Extrusion Shadow for true 3D depth */}
-              <div className="relative">
-                {/* 3D Emblem with dynamic specular highlights and atmospheric shadow */}
-                <img
-                  src="/assets/texora-logo-clean-tight.png"
-                  alt="Texora 3D Emblem"
-                  className="w-32 h-32 sm:w-44 sm:h-44 md:w-56 md:h-56 object-contain drop-shadow-[0_0_40px_rgba(56,189,248,0.75)] drop-shadow-[0_20px_45px_rgba(2,9,29,0.95)]"
-                  style={{
-                    filter: `brightness(${1.02 + Math.abs(bankAngleZ) * 0.008}) contrast(1.1)`,
-                  }}
-                />
-
-                {/* Dynamic Metallic Light Sweep / Sheen reflecting 3D angle */}
-                <div 
-                  className="absolute inset-0 pointer-events-none rounded-3xl overflow-hidden mix-blend-overlay"
-                  style={{
-                    background: `linear-gradient(${120 + bankAngleZ * 2}deg, rgba(255,255,255,0) 25%, rgba(255,255,255,${0.35 + Math.abs(bankAngleZ) * 0.02}) 50%, rgba(255,255,255,0) 75%)`,
-                    transform: `translateX(${bankAngleZ * 2.5}px)`,
-                  }}
-                />
-              </div>
-
-            </div>
+            <img
+              src="/assets/texora-logo-clean-tight.png"
+              alt="Texora Emblem"
+              className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 lg:w-48 lg:h-48 object-contain drop-shadow-[0_8px_20px_rgba(0,0,0,0.55)]"
+            />
           </div>
         )}
 
-        {/* ================= CHAPTER 3B: DEAD-CENTER PURE WHITE "TEXORA" (WHITE STAGE) ================= */}
+        {/* ================= CHAPTER 3B: EMBLEM ARRIVES ON LEFT + SEQUENTIAL "TEXORA" (WHITE STAGE) ================= */}
         {/*
             Exact user request:
-            1. PURE RADIANT WHITE BACKGROUND.
-            2. ONLY THE NAME "TEXORA" ON THE ENTIRE SCREEN!
-            3. Positioned DEAD-CENTER OF THE SCREEN (not top, not bottom)!
-            4. Letters reveal sequentially and automatically upon arrival:
-               [T Emblem] -> E -> X -> O -> R -> A
-            5. Dwells and stays complete for a comfortable scroll span without vanishing!
+            - Pure radiant white background.
+            - Emblem arrives on the LEFT before the name appears ("وفي الاخر يوصل للشمال قبل ظهرو الاسم تمام").
+            - The name "TEXORA" appears sequentially with smooth load:
+              [T Emblem on the left] -> E -> X -> O -> R -> A
+            - Plain emblem integrated into the site, dead-center horizontal and vertical.
+            - Stays complete and locks in place.
         */}
         {isWhiteStage && (
           <div 
-            className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none transition-opacity duration-500"
+            className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none transition-opacity duration-400"
             style={{ opacity: whiteStageOpacity }}
           >
-            {/* Centered LTR Brand Container */}
+            {/* Centered LTR Brandmark Container */}
             <div 
               className="flex items-center justify-center gap-3 sm:gap-5 md:gap-7 select-none px-4"
               dir="ltr"
             >
-              {/* 1. The 'T' Emblem (Locks firmly into position first) */}
+              {/* 1. The 'T' Emblem on the LEFT (Arrives first on the left) */}
               <div className="relative flex items-center justify-center">
                 <img
                   src="/assets/texora-logo-dark-tight.png"
                   alt="T Emblem"
-                  className="w-20 h-20 sm:w-32 sm:h-32 md:w-44 md:h-44 lg:w-52 lg:h-52 object-contain drop-shadow-[0_20px_35px_rgba(15,23,42,0.22)] animate-in fade-in zoom-in duration-300"
+                  className="w-18 h-18 sm:w-26 sm:h-26 md:w-36 md:h-36 lg:w-44 lg:h-44 object-contain drop-shadow-sm"
                 />
               </div>
 
-              {/* 2. The Letters 'E X O R A' - Revealed sequentially and automatically! */}
-              <div className="flex items-center tracking-wider font-['Syne'] font-black text-5xl sm:text-7xl md:text-8xl lg:text-9xl">
-                
-                {/* Letter E */}
-                <span 
-                  className={`transition-all duration-500 transform ${
-                    lettersRevealed >= 1 
-                      ? 'opacity-100 translate-y-0 scale-100' 
-                      : 'opacity-0 translate-y-6 scale-90'
-                  }`}
-                  style={{
-                    background: 'linear-gradient(135deg, #02091d 0%, #0f172a 35%, #1e3a8a 70%, #0284c7 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    display: 'inline-block'
-                  }}
-                >
-                  E
-                </span>
-
-                {/* Letter X */}
-                <span 
-                  className={`transition-all duration-500 transform ml-1 sm:ml-2 md:ml-3 ${
-                    lettersRevealed >= 2 
-                      ? 'opacity-100 translate-y-0 scale-100' 
-                      : 'opacity-0 translate-y-6 scale-90'
-                  }`}
-                  style={{
-                    background: 'linear-gradient(135deg, #02091d 0%, #0f172a 35%, #1e3a8a 70%, #0284c7 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    display: 'inline-block'
-                  }}
-                >
-                  X
-                </span>
-
-                {/* Letter O */}
-                <span 
-                  className={`transition-all duration-500 transform ml-1 sm:ml-2 md:ml-3 ${
-                    lettersRevealed >= 3 
-                      ? 'opacity-100 translate-y-0 scale-100' 
-                      : 'opacity-0 translate-y-6 scale-90'
-                  }`}
-                  style={{
-                    background: 'linear-gradient(135deg, #02091d 0%, #0f172a 35%, #1e3a8a 70%, #0284c7 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    display: 'inline-block'
-                  }}
-                >
-                  O
-                </span>
-
-                {/* Letter R */}
-                <span 
-                  className={`transition-all duration-500 transform ml-1 sm:ml-2 md:ml-3 ${
-                    lettersRevealed >= 4 
-                      ? 'opacity-100 translate-y-0 scale-100' 
-                      : 'opacity-0 translate-y-6 scale-90'
-                  }`}
-                  style={{
-                    background: 'linear-gradient(135deg, #02091d 0%, #0f172a 35%, #1e3a8a 70%, #0284c7 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    display: 'inline-block'
-                  }}
-                >
-                  R
-                </span>
-
-                {/* Letter A */}
-                <span 
-                  className={`transition-all duration-500 transform ml-1 sm:ml-2 md:ml-3 ${
-                    lettersRevealed >= 5 
-                      ? 'opacity-100 translate-y-0 scale-100' 
-                      : 'opacity-0 translate-y-6 scale-90'
-                  }`}
-                  style={{
-                    background: 'linear-gradient(135deg, #02091d 0%, #0f172a 35%, #1e3a8a 70%, #0284c7 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    display: 'inline-block'
-                  }}
-                >
-                  A
-                </span>
-
+              {/* 2. The Letters 'E X O R A' revealed sequentially to the right of the emblem */}
+              <div className="flex items-center tracking-wider font-['Syne'] font-black text-5xl sm:text-7xl md:text-8xl lg:text-9xl text-[#02091d]">
+                {['E', 'X', 'O', 'R', 'A'].map((char, index) => {
+                  const isRevealed = lettersRevealed > index;
+                  return (
+                    <span 
+                      key={char}
+                      className={`transition-all duration-300 transform ${
+                        isRevealed 
+                          ? 'opacity-100 translate-y-0 scale-100' 
+                          : 'opacity-0 translate-y-4 scale-95'
+                      }`}
+                      style={{
+                        display: 'inline-block',
+                        marginLeft: index > 0 ? '0.12em' : '0.04em',
+                        color: '#02091d',
+                      }}
+                    >
+                      {char}
+                    </span>
+                  );
+                })}
               </div>
+
             </div>
           </div>
         )}
