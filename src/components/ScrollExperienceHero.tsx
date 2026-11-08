@@ -7,8 +7,24 @@ interface ScrollExperienceHeroProps {
   language: Language;
 }
 
+interface Waypoint {
+  p: number;      // Scroll progress [0..1]
+  x: number;      // -1.0 = Far Left, +1.0 = Far Right
+  bank: number;   // 3D Roll angle (deg)
+  yaw: number;    // 3D Yaw angle (deg)
+}
+
 export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scrollY, language }) => {
   const isAr = language === 'ar';
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== 'undefined' ? window.innerWidth : 1440
+  );
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Typewriter effect for intro title
   const [typedTitle, setTypedTitle] = useState('');
@@ -58,7 +74,6 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
   const evadeTextOpacity = Math.max(1 - evadeFactor * 1.8, 0);
 
   // ================= 2. THE 5 PROGRESSIVE ARTICLES (0.12 to 0.62) =================
-  // Positioned on Left and Right sides while emblem descends in the Center
   const getArticleOpacity = (start: number, peak: number, end: number) => {
     if (progress < start || progress > end) return 0;
     if (progress <= peak) return (progress - start) / (peak - start);
@@ -71,51 +86,73 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
   const art4Opacity = getArticleOpacity(0.42, 0.47, 0.52); // Article 4: Physical Left
   const art5Opacity = getArticleOpacity(0.52, 0.57, 0.62); // Article 5: Physical Right
 
-  // ================= 3. EMBLEM ALWAYS IN CENTER WITH 3D DESCENT & ROTATION =================
-  // User explicitly requested: "خلي الشعار دايماً في المنتصف"
-  // Horizontal X is ALWAYS 0! The emblem stays dead center while descending in Y.
-  const isTransitionToWhite = progress >= 0.62 && progress < 0.68;
+  // ================= 3. EMBLEM IN VERTICAL CENTER, WEAVING RIGHT & LEFT =================
+  // User explicitly clarified:
+  // "يتحرك في منتصف الشاشه مش لاسفل يفضل يتحرك يمن و يسار في المنتصاف"
+  // Locked at vertical center (Y = 0), moves Right & Left (X) with 3D banking and yaw!
+  const waypoints: Waypoint[] = useMemo(() => [
+    { p: 0.00, x:  0.0, bank:   0, yaw:   0 },
+    { p: 0.10, x:  0.0, bank:   0, yaw:   0 },
+    // Article 1 is on RIGHT -> Emblem moves to LEFT in the middle of the screen
+    { p: 0.17, x: -1.0, bank: -18, yaw: -26 },
+    // Crossing center towards Right for Article 2
+    { p: 0.22, x:  0.0, bank:  14, yaw:  12 },
+    // Article 2 is on LEFT -> Emblem moves to RIGHT in the middle of the screen
+    { p: 0.27, x:  1.0, bank:  18, yaw:  26 },
+    // Crossing center towards Left for Article 3
+    { p: 0.32, x:  0.0, bank: -14, yaw: -12 },
+    // Article 3 is on RIGHT -> Emblem moves to LEFT
+    { p: 0.37, x: -1.0, bank: -18, yaw: -26 },
+    // Crossing center towards Right for Article 4
+    { p: 0.42, x:  0.0, bank:  14, yaw:  12 },
+    // Article 4 is on LEFT -> Emblem moves to RIGHT
+    { p: 0.47, x:  1.0, bank:  18, yaw:  26 },
+    // Crossing center towards Left for Article 5
+    { p: 0.52, x:  0.0, bank: -14, yaw: -12 },
+    // Article 5 is on RIGHT -> Emblem moves to LEFT
+    { p: 0.57, x: -1.0, bank: -18, yaw: -26 },
+    // DOCKING INTO THE BRAND NAME: Returns smoothly to center with zero tilt
+    { p: 0.63, x: -0.4, bank:  -8, yaw: -10 },
+    { p: 0.68, x:  0.0, bank:   0, yaw:   0 },
+    { p: 1.00, x:  0.0, bank:   0, yaw:   0 },
+  ], []);
+
+  // Smooth cosine easing interpolation
+  const flightState = useMemo(() => {
+    if (progress <= waypoints[0].p) return waypoints[0];
+    if (progress >= waypoints[waypoints.length - 1].p) return waypoints[waypoints.length - 1];
+
+    let i = 0;
+    while (i < waypoints.length - 1 && waypoints[i + 1].p < progress) {
+      i++;
+    }
+
+    const p0 = waypoints[i];
+    const p1 = waypoints[i + 1];
+    const range = p1.p - p0.p;
+    const t = range > 0 ? (progress - p0.p) / range : 0;
+    const ease = (1 - Math.cos(t * Math.PI)) / 2;
+
+    return {
+      p: progress,
+      x: p0.x + (p1.x - p0.x) * ease,
+      bank: p0.bank + (p1.bank - p0.bank) * ease,
+      yaw: p0.yaw + (p1.yaw - p0.yaw) * ease,
+    };
+  }, [progress, waypoints]);
+
+  // Lateral distance: generous travel across horizontal center
+  const lateralBound = Math.min(Math.max(windowWidth * 0.32, 220), 440);
+  const logoX = flightState.x * lateralBound;
+  const bankAngleZ = flightState.bank;
+  const yawAngleY = flightState.yaw;
+
+  // ================= 4. THE PURE WHITE STAGE (0.68 to 0.96) =================
   const isWhiteStage = progress >= 0.68;
   const whiteStageOpacity = Math.min(Math.max((progress - 0.64) / 0.04, 0), 1);
   const heroFadeOut = progress > 0.96 ? Math.max(1 - (progress - 0.96) / 0.04, 0) : 1;
 
-  // Vertical descent: descends during articles, then returns smoothly to exact center (Y = 0)
-  let logoY = 0;
-  let yawAngleY = 0;
-  let pitchAngleX = 0;
-  let bankAngleZ = 0;
-
-  if (progress < 0.12) {
-    // Intro center
-    logoY = 0;
-    yawAngleY = 0;
-    pitchAngleX = 0;
-    bankAngleZ = 0;
-  } else if (progress >= 0.12 && progress < 0.62) {
-    // Descent in the center corridor (0 to 220px) with 3D rotation
-    const t = (progress - 0.12) / 0.50; // 0 to 1
-    logoY = Math.sin(t * Math.PI * 0.5) * 200;
-    yawAngleY = Math.sin(t * Math.PI * 4) * 16;   // 3D periodic turn
-    pitchAngleX = Math.sin(t * Math.PI * 2) * 8;  // Descent pitch
-    bankAngleZ = Math.cos(t * Math.PI * 4) * 6;   // Gentle bank
-  } else if (isTransitionToWhite) {
-    // Returning smoothly to exact Y = 0 and 0 angles for laser-precise docking
-    const t = (progress - 0.62) / 0.06;
-    const ease = (1 - Math.cos(t * Math.PI)) / 2;
-    logoY = 200 * (1 - ease);
-    yawAngleY = 0;
-    pitchAngleX = 0;
-    bankAngleZ = 0;
-  } else {
-    // White Stage: Perfectly centered at 0 with 0 angles
-    logoY = 0;
-    yawAngleY = 0;
-    pitchAngleX = 0;
-    bankAngleZ = 0;
-  }
-
-  // ================= 4. FLUID STREAM OF LETTERS (تدفق الأحرف مش ظهور مفاجئ) =================
-  // Once entering the white stage, all letters flow in sequentially with smooth fluid animation
+  // Letters of TEXORA
   const letters = ['E', 'X', 'O', 'R', 'A'];
 
   return (
@@ -201,7 +238,7 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
         </div>
 
         {/* ================= CHAPTER 2: THE 5 PROGRESSIVE ARTICLES (FLANKING SIDES) ================= */}
-        {/* Emblem stays locked in the center corridor while articles display on Left & Right */}
+        {/* Emblem weaves Right & Left in the middle of the screen while articles show on sides */}
         
         {/* PHYSICAL LEFT COLUMN (Articles 2 & 4) */}
         <div 
@@ -329,9 +366,9 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
         {/* ================= CHAPTER 3: CENTERED EMBLEM + FLUID STREAM OF LETTERS ================= */}
         {/*
             Exact user request:
-            1. Emblem is ALWAYS IN THE CENTER horizontally (x = 0).
-            2. At the final name: Emblem is positioned with laser precision as 'T'.
-            3. Letters flow in smoothly and continuously ("يبدأ تدفق الأحرف مش ظهور مفاجئ").
+            1. Vertically CENTERED at all times (moves Right & Left, NOT downwards).
+            2. Settles with laser precision at the white stage as 'T'.
+            3. Fluid stream of letters E-X-O-R-A ("يبدأ تدفق الأحرف مش ظهور مفاجئ").
             4. The full name TEXORA is perfectly centered in the screen.
         */}
         <div 
@@ -341,11 +378,11 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           {/* Centered Brandmark Master Container */}
           <div className="relative flex items-center justify-center">
 
-            {/* 1. THE EMBLEM: Always in the center horizontally, settles with laser precision */}
+            {/* 1. THE EMBLEM: Moves Right & Left in the vertical center, settles with laser precision */}
             <div
               className="relative will-change-transform flex items-center justify-center select-none shrink-0"
               style={{
-                transform: `translate3d(0px, ${logoY}px, 0px) perspective(1000px) rotateX(${pitchAngleX}deg) rotateY(${yawAngleY}deg) rotateZ(${bankAngleZ}deg)`,
+                transform: `translate3d(${logoX}px, 0px, 0px) perspective(1000px) rotateY(${yawAngleY}deg) rotateZ(${bankAngleZ}deg)`,
                 transition: isWhiteStage ? 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'transform 0.05s linear',
               }}
             >
