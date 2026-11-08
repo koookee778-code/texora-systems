@@ -23,9 +23,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isAr = language === 'ar';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Clean top bar: At the very top, keep it minimal or hidden so user can focus on 3D scrollytelling
-  const isScrolledPastHero = scrollY > 400;
-  const isLogoDocked = scrollY > 1200;
+  // Clean top bar: Kept completely hidden during the 3D scrollytelling so screen is 100% uncluttered!
+  const isScrolledPastHero = scrollY > 3100;
+  const isLogoDocked = scrollY > 3100;
 
   const navLinks = [
     { href: '#systems', labelAr: 'الأنظمة والحلول', labelEn: 'Systems' },
@@ -39,8 +39,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolledPastHero
-          ? 'bg-[#02091d]/85 backdrop-blur-xl border-b border-cyan-500/15 shadow-2xl py-3 opacity-100 translate-y-0'
-          : 'bg-transparent py-4 opacity-75 hover:opacity-100'
+          ? 'bg-[#02091d]/90 backdrop-blur-xl border-b border-cyan-500/20 shadow-2xl py-3 opacity-100 translate-y-0 pointer-events-auto'
+          : 'opacity-0 -translate-y-10 pointer-events-none'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
