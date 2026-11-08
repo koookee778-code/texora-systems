@@ -167,11 +167,11 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
         </div>
 
         {/* ================= CHAPTER 1: INTRO FLANKING TEXTS (IMMEDIATELY PRESENT - NO TYPEWRITER) ================= */}
-        <div className="relative z-10 w-full max-w-7xl px-6 sm:px-12 flex justify-between items-center pointer-events-none">
+        <div className="relative z-10 w-full max-w-7xl px-6 sm:px-10 lg:px-14 flex justify-between items-center pointer-events-none">
           
-          {/* Left Block: Rendered Immediately */}
+          {/* Left Block: Pushed generously to left edge with ample center clearance */}
           <div 
-            className="w-5/12 transition-all duration-75 flex flex-col items-start text-left"
+            className="w-4/12 max-w-sm transition-all duration-75 flex flex-col items-start text-left"
             style={{ 
               transform: `translateX(${leftTextTranslateX}%)`,
               opacity: evadeTextOpacity,
@@ -182,21 +182,21 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
               <span>Next-Gen Architecture</span>
             </div>
 
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white font-['Syne'] leading-tight tracking-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white font-['Syne'] leading-tight tracking-tight">
               TEXORA SYSTEMS
             </h1>
 
-            <p className="mt-2 text-sm text-sky-200/80 max-w-sm font-light leading-relaxed">
+            <p className="mt-2 text-xs sm:text-sm text-sky-200/80 max-w-xs font-light leading-relaxed">
               {isAr ? 'هندسة الأنظمة والحلول البرمجية الفائقة • أداء استثنائي بلا تنازلات' : 'Architects of High-Performance Systems & Enterprise Software'}
             </p>
           </div>
 
-          {/* Center Clearance for Big Emblem */}
-          <div className="w-2/12" />
+          {/* Center Clearance for Big Majestic Emblem (4/12 wide = >400px clearance) */}
+          <div className="w-4/12" />
 
-          {/* Right Block: Rendered Immediately */}
+          {/* Right Block: Pushed generously to right edge */}
           <div 
-            className="w-5/12 transition-all duration-75 flex flex-col items-end text-right"
+            className="w-4/12 max-w-sm transition-all duration-75 flex flex-col items-end text-right"
             style={{ 
               transform: `translateX(${rightTextTranslateX}%)`,
               opacity: evadeTextOpacity,
@@ -207,14 +207,14 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
               <span>{isAr ? 'أنظمة فائقة الأداء' : 'Autonomous Systems'}</span>
             </div>
 
-            <h2 className="text-2xl md:text-4xl lg:text-5xl font-black text-white font-['Cairo'] leading-tight tracking-tight">
+            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-white font-['Cairo'] leading-tight tracking-tight">
               {isAr ? 'صناعة القوة البرمجية' : 'BEYOND CODE'}
               <span className="block text-transparent bg-clip-text bg-gradient-to-l from-cyan-300 via-sky-200 to-white">
                 {isAr ? 'للشركات والمؤسسات' : 'BEYOND HORIZONS'}
               </span>
             </h2>
 
-            <p className="mt-2 text-xs md:text-sm text-sky-200/80 max-w-xs font-light text-right leading-relaxed">
+            <p className="mt-2 text-xs sm:text-sm text-sky-200/80 max-w-xs font-light text-right leading-relaxed">
               {isAr 
                 ? 'أنظمة كاشير للمحلات • سلاسل الصيدليات الكبرى • منصات تعليمية DRM • بوتات واتساب 24/7'
                 : 'Enterprise Pharmacy POS • Multi-Branch Retail • DRM Protected LMS • 24/7 AI WhatsApp Agents'}
