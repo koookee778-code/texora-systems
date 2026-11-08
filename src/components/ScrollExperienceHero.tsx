@@ -9,7 +9,8 @@ interface ScrollExperienceHeroProps {
 
 interface Waypoint {
   p: number;      // Scroll progress [0..1]
-  x: number;      // -1.0 = Far Left, +1.0 = Far Right
+  x: number;      // -1.0 = Left, +1.0 = Right
+  y: number;      // 0.0 = Top/Center, 1.0 = Maximum descent
   bank: number;   // 3D Roll angle (deg)
   yaw: number;    // 3D Yaw angle (deg)
 }
@@ -26,95 +27,59 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Typewriter effect for intro title
-  const [typedTitle, setTypedTitle] = useState('');
-  const [typedSubtitle, setTypedSubtitle] = useState('');
-  const fullTitle = 'TEXORA SYSTEMS';
-  const fullSubtitle = isAr ? 'هندسة الأنظمة والحلول البرمجية الفائقة' : 'Architects of High-Performance Systems';
-
-  useEffect(() => {
-    let i = 0;
-    setTypedTitle('');
-    const timer = setInterval(() => {
-      if (i < fullTitle.length) {
-        setTypedTitle(fullTitle.slice(0, i + 1));
-        i++;
-      } else {
-        clearInterval(timer);
-      }
-    }, 40);
-    return () => clearInterval(timer);
-  }, []);
-
-  useEffect(() => {
-    let j = 0;
-    setTypedSubtitle('');
-    const delayTimer = setTimeout(() => {
-      const subTimer = setInterval(() => {
-        if (j < fullSubtitle.length) {
-          setTypedSubtitle(fullSubtitle.slice(0, j + 1));
-          j++;
-        } else {
-          clearInterval(subTimer);
-        }
-      }, 30);
-      return () => clearInterval(subTimer);
-    }, 500);
-    return () => clearTimeout(delayTimer);
-  }, [fullSubtitle]);
-
   // Generous scroll track (5000px) providing smooth progression
   const heroHeight = 5000;
   const progress = Math.min(Math.max(scrollY / heroHeight, 0), 1);
 
-  // ================= 1. INTRO TEXT EVASION (0 to 0.12) =================
+  // ================= 1. INTRO TEXT (ALREADY PRESENT & FULLY RENDERED - NO TYPEWRITER) =================
+  // User explicitly requested: "خلي النصوص تكون موجود مش تتولد"
+  // Texts are immediately present on page load, smoothly fading and sliding out with scroll
   const evadeFactor = Math.min(progress / 0.10, 1);
   const leftTextTranslateX = -evadeFactor * 240;
   const rightTextTranslateX = evadeFactor * 240;
-  const evadeTextOpacity = Math.max(1 - evadeFactor * 1.8, 0);
+  const evadeTextOpacity = Math.max(1 - evadeFactor * 1.6, 0);
 
-  // ================= 2. THE 5 PROGRESSIVE ARTICLES (0.12 to 0.62) =================
-  const getArticleOpacity = (start: number, peak: number, end: number) => {
-    if (progress < start || progress > end) return 0;
-    if (progress <= peak) return (progress - start) / (peak - start);
-    return 1 - (progress - peak) / (end - peak);
+  // ================= 2. THE 5 PROGRESSIVE ARTICLES (SMOOTH CONTINUOUS SCROLL-LINKED OPACITY) =================
+  // Smooth mountain curve (0 -> 1 -> 0) tied directly to scroll, zero sudden pops
+  const getArticleOpacity = (center: number, spread: number = 0.06) => {
+    const dist = Math.abs(progress - center);
+    if (dist > spread) return 0;
+    return 1 - (dist / spread);
   };
 
-  const art1Opacity = getArticleOpacity(0.12, 0.17, 0.22); // Article 1: Physical Right
-  const art2Opacity = getArticleOpacity(0.22, 0.27, 0.32); // Article 2: Physical Left
-  const art3Opacity = getArticleOpacity(0.32, 0.37, 0.42); // Article 3: Physical Right
-  const art4Opacity = getArticleOpacity(0.42, 0.47, 0.52); // Article 4: Physical Left
-  const art5Opacity = getArticleOpacity(0.52, 0.57, 0.62); // Article 5: Physical Right
+  const art1Opacity = getArticleOpacity(0.17); // Article 1: Physical Right
+  const art2Opacity = getArticleOpacity(0.27); // Article 2: Physical Left
+  const art3Opacity = getArticleOpacity(0.37); // Article 3: Physical Right
+  const art4Opacity = getArticleOpacity(0.47); // Article 4: Physical Left
+  const art5Opacity = getArticleOpacity(0.57); // Article 5: Physical Right
 
-  // ================= 3. EMBLEM IN VERTICAL CENTER, WEAVING RIGHT & LEFT =================
-  // User explicitly clarified:
-  // "يتحرك في منتصف الشاشه مش لاسفل يفضل يتحرك يمن و يسار في المنتصاف"
-  // Locked at vertical center (Y = 0), moves Right & Left (X) with 3D banking and yaw!
+  // ================= 3. MAJESTIC BIG EMBLEM DESCENT & SIMPLE PROFESSIONAL 3D FLIGHT =================
+  // User: "نزول الشعار بحجم أكبر وبأنميشن بسيط واحترافي"
   const waypoints: Waypoint[] = useMemo(() => [
-    { p: 0.00, x:  0.0, bank:   0, yaw:   0 },
-    { p: 0.10, x:  0.0, bank:   0, yaw:   0 },
-    // Article 1 is on RIGHT -> Emblem moves to LEFT in the middle of the screen
-    { p: 0.17, x: -1.0, bank: -18, yaw: -26 },
+    { p: 0.00, x:  0.0, y: 0.00, bank:   0, yaw:   0 },
+    { p: 0.10, x:  0.0, y: 0.00, bank:   0, yaw:   0 },
+    // Article 1 is on RIGHT -> Emblem sways Left with calm dignified banking
+    { p: 0.17, x: -1.0, y: 0.28, bank: -12, yaw: -18 },
     // Crossing center towards Right for Article 2
-    { p: 0.22, x:  0.0, bank:  14, yaw:  12 },
-    // Article 2 is on LEFT -> Emblem moves to RIGHT in the middle of the screen
-    { p: 0.27, x:  1.0, bank:  18, yaw:  26 },
+    { p: 0.22, x:  0.0, y: 0.50, bank:   8, yaw:   8 },
+    // Article 2 is on LEFT -> Emblem sways Right
+    { p: 0.27, x:  1.0, y: 0.68, bank:  12, yaw:  18 },
     // Crossing center towards Left for Article 3
-    { p: 0.32, x:  0.0, bank: -14, yaw: -12 },
-    // Article 3 is on RIGHT -> Emblem moves to LEFT
-    { p: 0.37, x: -1.0, bank: -18, yaw: -26 },
+    { p: 0.32, x:  0.0, y: 0.80, bank:  -8, yaw:  -8 },
+    // Article 3 is on RIGHT -> Emblem sways Left
+    { p: 0.37, x: -1.0, y: 0.90, bank: -12, yaw: -18 },
     // Crossing center towards Right for Article 4
-    { p: 0.42, x:  0.0, bank:  14, yaw:  12 },
-    // Article 4 is on LEFT -> Emblem moves to RIGHT
-    { p: 0.47, x:  1.0, bank:  18, yaw:  26 },
+    { p: 0.42, x:  0.0, y: 0.95, bank:   8, yaw:   8 },
+    // Article 4 is on LEFT -> Emblem sways Right
+    { p: 0.47, x:  1.0, y: 0.98, bank:  12, yaw:  18 },
     // Crossing center towards Left for Article 5
-    { p: 0.52, x:  0.0, bank: -14, yaw: -12 },
-    // Article 5 is on RIGHT -> Emblem moves to LEFT
-    { p: 0.57, x: -1.0, bank: -18, yaw: -26 },
-    // DOCKING INTO THE BRAND NAME: Returns smoothly to center with zero tilt
-    { p: 0.63, x: -0.4, bank:  -8, yaw: -10 },
-    { p: 0.68, x:  0.0, bank:   0, yaw:   0 },
-    { p: 1.00, x:  0.0, bank:   0, yaw:   0 },
+    { p: 0.52, x:  0.0, y: 1.00, bank:  -8, yaw:  -8 },
+    // Article 5 is on RIGHT -> Emblem sways Left
+    { p: 0.57, x: -1.0, y: 1.00, bank: -12, yaw: -18 },
+    // DOCKING INTO THE BRAND NAME: Emblem returns smoothly to exact center (0, 0)
+    { p: 0.63, x: -0.4, y: 0.45, bank:  -6, yaw:  -8 },
+    { p: 0.68, x:  0.0, y: 0.00, bank:   0, yaw:   0 },
+    { p: 1.00, x:  0.0, y: 0.00, bank:   0, yaw:   0 },
   ], []);
 
   // Smooth cosine easing interpolation
@@ -136,24 +101,45 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
     return {
       p: progress,
       x: p0.x + (p1.x - p0.x) * ease,
+      y: p0.y + (p1.y - p0.y) * ease,
       bank: p0.bank + (p1.bank - p0.bank) * ease,
       yaw: p0.yaw + (p1.yaw - p0.yaw) * ease,
     };
   }, [progress, waypoints]);
 
-  // Lateral distance: generous travel across horizontal center
-  const lateralBound = Math.min(Math.max(windowWidth * 0.32, 220), 440);
-  const logoX = flightState.x * lateralBound;
-  const bankAngleZ = flightState.bank;
-  const yawAngleY = flightState.yaw;
+  // Dignified lateral travel bound (stays clear of articles by >500px)
+  const lateralBound = Math.min(Math.max(windowWidth * 0.22, 180), 280);
+  const verticalBound = 160;
 
-  // ================= 4. THE PURE WHITE STAGE (0.68 to 0.96) =================
   const isWhiteStage = progress >= 0.68;
   const whiteStageOpacity = Math.min(Math.max((progress - 0.64) / 0.04, 0), 1);
   const heroFadeOut = progress > 0.96 ? Math.max(1 - (progress - 0.96) / 0.04, 0) : 1;
 
-  // Letters of TEXORA
+  const logoX = isWhiteStage ? 0 : flightState.x * lateralBound;
+  const logoY = isWhiteStage ? 0 : flightState.y * verticalBound;
+  const bankAngleZ = isWhiteStage ? 0 : flightState.bank;
+  const yawAngleY = isWhiteStage ? 0 : flightState.yaw;
+
+  // ================= 4. SEQUENTIAL LETTER ADDITION AFTER EMBLEM LANDS =================
+  // User: "لازم الشعار ده هوه الي يظهر في الاسم الي في المنتصف يحط مكانه وبعدين يتضاف باقي الاسم مش تستخدم شعار جاهز"
+  // The emblem lands firmly in its place as 'T', then letters E-X-O-R-A are added sequentially beside it!
   const letters = ['E', 'X', 'O', 'R', 'A'];
+  const [lettersCount, setLettersCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (isWhiteStage) {
+      const timers = [
+        setTimeout(() => setLettersCount(1), 220), // 'E' added
+        setTimeout(() => setLettersCount(2), 380), // 'X' added
+        setTimeout(() => setLettersCount(3), 540), // 'O' added
+        setTimeout(() => setLettersCount(4), 700), // 'R' added
+        setTimeout(() => setLettersCount(5), 860), // 'A' added
+      ];
+      return () => timers.forEach(clearTimeout);
+    } else if (progress < 0.60) {
+      setLettersCount(0);
+    }
+  }, [isWhiteStage, progress < 0.60]);
 
   return (
     <div className="relative w-full" style={{ height: `${heroHeight + 600}px` }}>
@@ -177,13 +163,13 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           className="absolute inset-0 bg-white transition-opacity duration-500 pointer-events-none"
           style={{ opacity: whiteStageOpacity }}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:32px_32px] opacity-35" />
+          <div className="absolute inset-0 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:32px_32px] opacity-30" />
         </div>
 
-        {/* ================= CHAPTER 1: INTRO FLANKING TEXTS ================= */}
+        {/* ================= CHAPTER 1: INTRO FLANKING TEXTS (IMMEDIATELY PRESENT - NO TYPEWRITER) ================= */}
         <div className="relative z-10 w-full max-w-7xl px-6 sm:px-12 flex justify-between items-center pointer-events-none">
           
-          {/* Left Block (Dodges far to the Left) */}
+          {/* Left Block: Rendered Immediately */}
           <div 
             className="w-5/12 transition-all duration-75 flex flex-col items-start text-left"
             style={{ 
@@ -196,20 +182,19 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
               <span>Next-Gen Architecture</span>
             </div>
 
-            <h1 className="text-3xl md:text-5xl font-black text-white font-['Syne'] leading-tight tracking-tight">
-              {typedTitle}
-              <span className="inline-block w-2.5 h-8 bg-cyan-400 ml-1 animate-blink" />
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white font-['Syne'] leading-tight tracking-tight">
+              TEXORA SYSTEMS
             </h1>
 
             <p className="mt-2 text-sm text-sky-200/80 max-w-sm font-light leading-relaxed">
-              {typedSubtitle}
+              {isAr ? 'هندسة الأنظمة والحلول البرمجية الفائقة • أداء استثنائي بلا تنازلات' : 'Architects of High-Performance Systems & Enterprise Software'}
             </p>
           </div>
 
-          {/* Center Clearance for Emblem */}
+          {/* Center Clearance for Big Emblem */}
           <div className="w-2/12" />
 
-          {/* Right Block (Dodges far to the Right) */}
+          {/* Right Block: Rendered Immediately */}
           <div 
             className="w-5/12 transition-all duration-75 flex flex-col items-end text-right"
             style={{ 
@@ -219,10 +204,10 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-sky-300 text-xs font-mono font-bold mb-3 tracking-widest uppercase">
               <Cpu className="w-3.5 h-3.5" />
-              <span>{isAr ? 'ذكاء اصطناعي وأتمتة' : 'Autonomous Systems'}</span>
+              <span>{isAr ? 'أنظمة فائقة الأداء' : 'Autonomous Systems'}</span>
             </div>
 
-            <h2 className="text-2xl md:text-4xl font-black text-white font-['Cairo'] leading-tight tracking-tight">
+            <h2 className="text-2xl md:text-4xl lg:text-5xl font-black text-white font-['Cairo'] leading-tight tracking-tight">
               {isAr ? 'صناعة القوة البرمجية' : 'BEYOND CODE'}
               <span className="block text-transparent bg-clip-text bg-gradient-to-l from-cyan-300 via-sky-200 to-white">
                 {isAr ? 'للشركات والمؤسسات' : 'BEYOND HORIZONS'}
@@ -231,24 +216,23 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
 
             <p className="mt-2 text-xs md:text-sm text-sky-200/80 max-w-xs font-light text-right leading-relaxed">
               {isAr 
-                ? 'أنظمة صيدليات متطورة • كاشير متاجر وبرندات • منصات تعليمية تفاعلية • بوتات واتساب 24/7'
+                ? 'أنظمة كاشير للمحلات • سلاسل الصيدليات الكبرى • منصات تعليمية DRM • بوتات واتساب 24/7'
                 : 'Enterprise Pharmacy POS • Multi-Branch Retail • DRM Protected LMS • 24/7 AI WhatsApp Agents'}
             </p>
           </div>
         </div>
 
-        {/* ================= CHAPTER 2: THE 5 PROGRESSIVE ARTICLES (FLANKING SIDES) ================= */}
-        {/* Emblem weaves Right & Left in the middle of the screen while articles show on sides */}
+        {/* ================= CHAPTER 2: THE 5 PROGRESSIVE ARTICLES (SMOOTH SCROLL-TIED OPACITY) ================= */}
         
         {/* PHYSICAL LEFT COLUMN (Articles 2 & 4) */}
         <div 
-          className="absolute left-6 sm:left-12 lg:left-24 top-1/2 -translate-y-1/2 w-72 sm:w-88 md:w-96 pointer-events-none z-15 flex flex-col items-start space-y-8"
+          className="absolute left-6 sm:left-12 lg:left-20 top-1/2 -translate-y-1/2 w-80 sm:w-96 pointer-events-none z-15 flex flex-col items-start space-y-8"
           style={{ direction: isAr ? 'rtl' : 'ltr' }}
         >
           {/* Article 2: اللغات والترسانة التقنية */}
           {art2Opacity > 0 && (
             <div 
-              className="transition-opacity duration-200"
+              className="transition-opacity duration-150"
               style={{ opacity: art2Opacity }}
             >
               <div className="text-xs font-mono font-bold text-cyan-400 tracking-widest uppercase mb-1 flex items-center gap-2">
@@ -275,7 +259,7 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           {/* Article 4: الخبرة البرمجية وسابقة الأعمال */}
           {art4Opacity > 0 && (
             <div 
-              className="transition-opacity duration-200"
+              className="transition-opacity duration-150"
               style={{ opacity: art4Opacity }}
             >
               <div className="text-xs font-mono font-bold text-cyan-400 tracking-widest uppercase mb-1 flex items-center gap-2">
@@ -296,13 +280,13 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
 
         {/* PHYSICAL RIGHT COLUMN (Articles 1, 3, 5) */}
         <div 
-          className="absolute right-6 sm:right-12 lg:right-24 top-1/2 -translate-y-1/2 w-72 sm:w-88 md:w-96 pointer-events-none z-15 flex flex-col items-end space-y-8 text-right"
+          className="absolute right-6 sm:right-12 lg:right-20 top-1/2 -translate-y-1/2 w-80 sm:w-96 pointer-events-none z-15 flex flex-col items-end space-y-8 text-right"
           style={{ direction: isAr ? 'rtl' : 'ltr' }}
         >
           {/* Article 1: الجودة والدقة البرمجية */}
           {art1Opacity > 0 && (
             <div 
-              className="transition-opacity duration-200"
+              className="transition-opacity duration-150"
               style={{ opacity: art1Opacity }}
             >
               <div className="text-xs font-mono font-bold text-cyan-400 tracking-widest uppercase mb-1 flex items-center justify-end gap-2">
@@ -323,7 +307,7 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           {/* Article 3: مدة الإنجاز والتسليم في أسبوعين */}
           {art3Opacity > 0 && (
             <div 
-              className="transition-opacity duration-200"
+              className="transition-opacity duration-150"
               style={{ opacity: art3Opacity }}
             >
               <div className="text-xs font-mono font-bold text-emerald-400 tracking-widest uppercase mb-1 flex items-center justify-end gap-2">
@@ -344,7 +328,7 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           {/* Article 5: السرعة الفائقة وسرعة الرد */}
           {art5Opacity > 0 && (
             <div 
-              className="transition-opacity duration-200"
+              className="transition-opacity duration-150"
               style={{ opacity: art5Opacity }}
             >
               <div className="text-xs font-mono font-bold text-cyan-400 tracking-widest uppercase mb-1 flex items-center justify-end gap-2">
@@ -363,13 +347,13 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           )}
         </div>
 
-        {/* ================= CHAPTER 3: CENTERED EMBLEM + FLUID STREAM OF LETTERS ================= */}
+        {/* ================= CHAPTER 3: BIG EMBLEM LANDS FIRMLY + SEQUENTIAL NAME ADDITION ================= */}
         {/*
             Exact user request:
-            1. Vertically CENTERED at all times (moves Right & Left, NOT downwards).
-            2. Settles with laser precision at the white stage as 'T'.
-            3. Fluid stream of letters E-X-O-R-A ("يبدأ تدفق الأحرف مش ظهور مفاجئ").
-            4. The full name TEXORA is perfectly centered in the screen.
+            1. BIG EMBLEM with simple, professional 3D descent.
+            2. The SAME emblem lands in place as 'T' in the center ("يحط مكانه").
+            3. Then the rest of the name is added sequentially ("يتضاف باقي الاسم مش شعار جاهز").
+            4. The full name TEXORA is perfectly centered in pure white.
         */}
         <div 
           className="absolute inset-0 z-30 flex items-center justify-center pointer-events-none select-none px-4"
@@ -378,32 +362,29 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
           {/* Centered Brandmark Master Container */}
           <div className="relative flex items-center justify-center">
 
-            {/* 1. THE EMBLEM: Moves Right & Left in the vertical center, settles with laser precision */}
+            {/* 1. THE BIG MAJESTIC EMBLEM (Moves in 3D during scroll, lands firmly as 'T' in the white stage) */}
             <div
               className="relative will-change-transform flex items-center justify-center select-none shrink-0"
               style={{
-                transform: `translate3d(${logoX}px, 0px, 0px) perspective(1000px) rotateY(${yawAngleY}deg) rotateZ(${bankAngleZ}deg)`,
-                transition: isWhiteStage ? 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)' : 'transform 0.05s linear',
+                transform: `translate3d(${logoX}px, ${logoY}px, 0px) perspective(1000px) rotateY(${yawAngleY}deg) rotateZ(${bankAngleZ}deg)`,
+                transition: isWhiteStage ? 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)' : 'transform 0.06s linear',
               }}
             >
               <img
                 src="/assets/texora-logo-clean-tight.png"
                 alt="Texora Emblem"
-                className="w-20 h-20 sm:w-28 sm:h-28 md:w-36 md:h-36 lg:w-44 lg:h-44 object-contain"
+                className={`object-contain transition-all duration-500 ${
+                  isWhiteStage 
+                    ? 'w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 drop-shadow-[0_15px_30px_rgba(15,23,42,0.2)]' 
+                    : 'w-40 h-40 sm:w-52 sm:h-52 md:w-64 md:h-64 lg:w-72 lg:h-72 drop-shadow-[0_14px_35px_rgba(0,0,0,0.65)]'
+                }`}
                 style={{
-                  filter: isWhiteStage 
-                    ? 'contrast(1.2) brightness(0.9) drop-shadow(0 14px 28px rgba(15,23,42,0.22))' 
-                    : 'drop-shadow(0 8px 24px rgba(0,0,0,0.6))',
+                  filter: isWhiteStage ? 'contrast(1.2) brightness(0.92)' : 'none',
                 }}
               />
             </div>
 
-            {/* 2. FLUID STREAM OF LETTERS 'E X O R A' */}
-            {/*
-                Smooth overlapping stream:
-                Each letter flows in with progressive slide-in, gradual opacity, and optical focus
-                creating a continuous typographic wave ("تدفق الأحرف مش ظهور مفاجئ")
-            */}
+            {/* 2. THE LETTERS 'E X O R A' - Added sequentially AFTER emblem lands in place */}
             <div 
               className="flex items-center tracking-wider font-['Syne'] font-black text-5xl sm:text-7xl md:text-8xl lg:text-9xl text-[#02091d] shrink-0"
               style={{
@@ -414,21 +395,20 @@ export const ScrollExperienceHero: React.FC<ScrollExperienceHeroProps> = ({ scro
               }}
             >
               {letters.map((char, index) => {
-                // Staggered continuous flow delay
-                const delayMs = index * 140 + 120; // 120ms, 260ms, 400ms, 540ms, 680ms
+                const isAdded = lettersCount > index;
                 return (
                   <span 
                     key={char}
-                    className="inline-block transition-all transform"
+                    className={`inline-block transition-all transform ${
+                      isAdded 
+                        ? 'opacity-100 translate-x-0 scale-100' 
+                        : 'opacity-0 -translate-x-8 scale-80'
+                    }`}
                     style={{
-                      marginLeft: index > 0 ? '0.12em' : '0.16em',
+                      marginLeft: index > 0 ? '0.12em' : '0.18em',
                       color: '#02091d',
-                      opacity: isWhiteStage ? 1 : 0,
-                      transform: isWhiteStage ? 'translateX(0px) scale(1)' : 'translateX(-28px) scale(0.9)',
-                      filter: isWhiteStage ? 'blur(0px)' : 'blur(6px)',
-                      transitionDuration: '550ms',
+                      transitionDuration: '450ms',
                       transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)',
-                      transitionDelay: isWhiteStage ? `${delayMs}ms` : '0ms',
                     }}
                   >
                     {char}
