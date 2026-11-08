@@ -1,0 +1,106 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&family=Syne:wght@600;700;800;900&display=swap');
+
+@layer base {
+  :root {
+    --font-ar: 'Cairo', system-ui, sans-serif;
+    --font-en: 'Outfit', system-ui, sans-serif;
+    --font-display: 'Syne', system-ui, sans-serif;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  body {
+    background-color: #030712;
+    color: #f3f4f6;
+    overflow-x: hidden;
+    font-family: var(--font-ar);
+    selection-background-color: #38bdf8;
+    selection-color: #030712;
+  }
+
+  /* Custom high-tech scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #030712;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1f2937;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #374151;
+  }
+}
+
+/* Chrome metallic gradient text */
+.text-metallic {
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 35%, #94a3b8 70%, #f8fafc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-chrome-gold {
+  background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-cyan-glow {
+  background: linear-gradient(135deg, #a5f3fc 0%, #38bdf8 50%, #0284c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Radiant glow backgrounds */
+.glow-card {
+  position: relative;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glow-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(to bottom right, rgba(255,255,255,0.18), rgba(255,255,255,0.02), rgba(56,189,248,0.15));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.glow-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -15px rgba(56, 189, 248, 0.15);
+}
+
+/* Light white section smooth styling */
+.brand-white-stage {
+  background: radial-gradient(circle at 50% 30%, #ffffff 0%, #f8fafc 40%, #e2e8f0 100%);
+  color: #0f172a;
+}
+
+/* Keyframes for subtle animations */
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1deg); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.08); }
+}
+
+.animate-float-slow {
+  animation: floatSlow 7s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
+}
