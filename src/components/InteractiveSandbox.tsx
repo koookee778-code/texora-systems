@@ -190,13 +190,13 @@ export const InteractiveSandbox: React.FC<InteractiveSandboxProps> = ({ language
 
       {/* Sandbox Selector Switcher */}
       <div className="flex justify-center mb-10">
-        <div className="inline-flex p-1.5 rounded-2xl bg-gray-900/80 border border-white/10 backdrop-blur-xl">
+        <div className="inline-flex p-1.5 rounded-2xl bg-blue-950/60 border border-cyan-500/20 backdrop-blur-xl">
           <button
             onClick={() => setActiveSandbox('pos')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
               activeSandbox === 'pos'
                 ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20'
-                : 'text-gray-400 hover:text-white'
+                : 'text-sky-200/70 hover:text-white'
             }`}
           >
             <ShoppingCart className="w-4 h-4" />
@@ -207,8 +207,8 @@ export const InteractiveSandbox: React.FC<InteractiveSandboxProps> = ({ language
             onClick={() => setActiveSandbox('edu')}
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
               activeSandbox === 'edu'
-                ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20'
-                : 'text-gray-400 hover:text-white'
+                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-500/20'
+                : 'text-sky-200/70 hover:text-white'
             }`}
           >
             <Film className="w-4 h-4" />
@@ -220,7 +220,7 @@ export const InteractiveSandbox: React.FC<InteractiveSandboxProps> = ({ language
             className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
               activeSandbox === 'whatsapp'
                 ? 'bg-gradient-to-r from-cyan-500 to-sky-600 text-gray-950 shadow-lg shadow-cyan-500/20'
-                : 'text-gray-400 hover:text-white'
+                : 'text-sky-200/70 hover:text-white'
             }`}
           >
             <Bot className="w-4 h-4" />
@@ -231,7 +231,7 @@ export const InteractiveSandbox: React.FC<InteractiveSandboxProps> = ({ language
 
       {/* ================= SANDBOX 1: POS CASHIER TERMINAL ================= */}
       {activeSandbox === 'pos' && (
-        <div className="glow-card rounded-3xl bg-gray-950/90 border border-white/10 p-6 lg:p-8 backdrop-blur-2xl">
+        <div className="glow-card rounded-3xl bg-gradient-to-b from-blue-950/40 via-[#04163d]/60 to-[#02091d]/90 border border-cyan-500/20 p-6 lg:p-8 backdrop-blur-2xl">
           
           <div className="flex flex-wrap items-center justify-between pb-6 mb-6 border-b border-white/10 gap-4">
             <div className="flex items-center gap-3">
@@ -432,7 +432,7 @@ export const InteractiveSandbox: React.FC<InteractiveSandboxProps> = ({ language
 
       {/* ================= SANDBOX 2: EDUVERSE LMS SIMULATOR ================= */}
       {activeSandbox === 'edu' && (
-        <div className="glow-card rounded-3xl bg-gray-950/90 border border-white/10 p-6 lg:p-8 backdrop-blur-2xl">
+        <div className="glow-card rounded-3xl bg-gradient-to-b from-blue-950/40 via-[#04163d]/60 to-[#02091d]/90 border border-cyan-500/20 p-6 lg:p-8 backdrop-blur-2xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             
             {/* DRM Video Player Simulation */}
@@ -543,7 +543,7 @@ export const InteractiveSandbox: React.FC<InteractiveSandboxProps> = ({ language
 
       {/* ================= SANDBOX 3: WHATSAPP AUTONOMOUS AI BOT ================= */}
       {activeSandbox === 'whatsapp' && (
-        <div className="glow-card rounded-3xl bg-gray-950/90 border border-white/10 p-6 lg:p-8 backdrop-blur-2xl">
+        <div className="glow-card rounded-3xl bg-gradient-to-b from-blue-950/40 via-[#04163d]/60 to-[#02091d]/90 border border-cyan-500/20 p-6 lg:p-8 backdrop-blur-2xl">
           <div className="max-w-xl mx-auto">
             
             {/* Phone Screen Mockup Frame */}

@@ -69,7 +69,7 @@ export function App() {
   };
 
   return (
-    <div className="relative min-h-screen bg-gray-950 text-gray-100 selection:bg-cyan-500 selection:text-gray-950 font-['Cairo']">
+    <div className="relative min-h-screen bg-[#02091d] text-slate-100 selection:bg-cyan-500 selection:text-gray-950 font-['Cairo']">
       
       {/* 3D WebGL Canvas Layer */}
       <ThreeCanvas scrollY={scrollY} />

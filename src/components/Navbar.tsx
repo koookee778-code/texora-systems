@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { 
-  Menu, X, MessageSquare, Globe, Volume2, VolumeX, 
-  Sparkles, Layers, Terminal, Calculator, Send, ShieldCheck
+  Menu, X, MessageSquare, Globe, Volume2, VolumeX 
 } from 'lucide-react';
-import { Language } from '../types';
+import type { Language } from '../types';
 
 interface NavbarProps {
   language: Language;
@@ -20,64 +19,61 @@ export const Navbar: React.FC<NavbarProps> = ({
   scrollY,
   soundEnabled,
   onToggleSound,
-  onOpenPrivacy
 }) => {
   const isAr = language === 'ar';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // When scroll passes 700px, logo is docked in navbar
-  const isLogoDocked = scrollY > 650;
-  const isScrolled = scrollY > 50;
+  // Clean top bar: At the very top, keep it minimal or hidden so user can focus on 3D scrollytelling
+  const isScrolledPastHero = scrollY > 400;
+  const isLogoDocked = scrollY > 1200;
 
   const navLinks = [
-    { href: '#systems', labelAr: 'الأنظمة والحلول', labelEn: 'Systems & Solutions' },
-    { href: '#sandbox', labelAr: 'تجربة حية (Sandbox)', labelEn: 'Live Sandbox' },
+    { href: '#systems', labelAr: 'الأنظمة والحلول', labelEn: 'Systems' },
+    { href: '#sandbox', labelAr: 'تجربة حية (Sandbox)', labelEn: 'Live Demos' },
     { href: '#projects', labelAr: 'المشاريع والمنصات', labelEn: 'Portfolio' },
-    { href: '#calculator', labelAr: 'حاسبة التكلفة', labelEn: 'Cost Estimator' },
+    { href: '#calculator', labelAr: 'حاسبة التكلفة', labelEn: 'Estimator' },
     { href: '#contact', labelAr: 'تواصل معنا', labelEn: 'Contact' },
   ];
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'bg-gray-950/85 backdrop-blur-xl border-b border-white/10 shadow-2xl py-3'
-          : 'bg-transparent py-5'
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        isScrolledPastHero
+          ? 'bg-[#02091d]/85 backdrop-blur-xl border-b border-cyan-500/15 shadow-2xl py-3 opacity-100 translate-y-0'
+          : 'bg-transparent py-4 opacity-75 hover:opacity-100'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         
-        {/* Brand / Docked Logo */}
+        {/* Brand / Logo (LTR formatted) */}
         <a 
           href="#" 
-          className="flex items-center gap-3 group transition-transform duration-300"
+          className="flex items-center gap-2.5 group transition-transform duration-300"
+          dir="ltr"
         >
-          <div className="relative w-10 h-10 flex items-center justify-center">
+          <div className="relative w-9 h-9 flex items-center justify-center">
             <img
               src="/assets/texora-logo-clean-tight.png"
               alt="Texora"
               className={`w-full h-full object-contain transition-all duration-500 ${
-                isLogoDocked ? 'scale-100 opacity-100' : 'scale-90 opacity-80'
-              } group-hover:scale-110 drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]`}
+                isLogoDocked ? 'scale-100 opacity-100' : 'scale-90 opacity-85'
+              } group-hover:scale-110 drop-shadow-[0_0_15px_rgba(56,189,248,0.6)]`}
             />
           </div>
-          <div className="flex flex-col">
-            <div className="flex items-center tracking-widest font-black text-xl font-['Syne'] text-white">
-              <span className="text-cyan-400">T</span>EXORA
-            </div>
-            <span className="text-[10px] tracking-wider text-gray-400 font-normal uppercase -mt-1 font-['Outfit']">
-              {isAr ? 'للأنظمة والبرمجيات' : 'Digital Systems'}
-            </span>
+          <div className="flex items-center tracking-widest font-black text-xl font-['Syne'] text-white">
+            <span className="text-cyan-400">T</span>EXORA
           </div>
         </a>
 
-        {/* Desktop Nav Links */}
-        <div className="hidden md:flex items-center gap-1 lg:gap-2 bg-white/5 border border-white/10 px-4 py-1.5 rounded-full backdrop-blur-md">
+        {/* Desktop Nav Links (Visible when scrolled or hovered) */}
+        <div className={`hidden md:flex items-center gap-1 lg:gap-2 px-4 py-1.5 rounded-full transition-opacity duration-300 ${
+          isScrolledPastHero ? 'bg-white/5 border border-white/10 opacity-100' : 'opacity-0 hover:opacity-100'
+        }`}>
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="px-3 py-1.5 text-xs lg:text-sm font-medium text-gray-300 hover:text-cyan-400 hover:bg-white/5 rounded-full transition"
+              className="px-3 py-1.5 text-xs lg:text-sm font-medium text-sky-100/90 hover:text-cyan-300 hover:bg-white/5 rounded-full transition"
             >
               {isAr ? link.labelAr : link.labelEn}
             </a>
@@ -85,12 +81,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Action Controls & CTA */}
-        <div className="hidden md:flex items-center gap-3">
+        <div className="flex items-center gap-3">
           {/* Sound Toggle */}
           <button
             onClick={onToggleSound}
             aria-label="Toggle ambient sound"
-            className="p-2 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition"
+            className="p-2 rounded-full bg-white/5 border border-white/10 text-sky-300 hover:text-white hover:bg-white/10 transition"
             title={soundEnabled ? 'كتم الصوت' : 'تشغيل الصوت التفاعلي'}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4 text-cyan-400" /> : <VolumeX className="w-4 h-4" />}
@@ -99,7 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Language Switcher */}
           <button
             onClick={onToggleLanguage}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-gray-300 hover:text-white hover:bg-white/10 transition font-['Outfit']"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-sky-200 hover:text-white hover:bg-white/10 transition font-['Outfit']"
           >
             <Globe className="w-3.5 h-3.5 text-cyan-400" />
             <span>{isAr ? 'EN' : 'العربية'}</span>
@@ -117,52 +113,34 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
             </span>
             <MessageSquare className="w-4 h-4" />
-            <span>{isAr ? 'محادثة فورية (WhatsApp)' : 'Instant WhatsApp'}</span>
+            <span className="hidden sm:inline">{isAr ? 'واتساب فوري' : 'Instant WhatsApp'}</span>
           </a>
-        </div>
 
-        {/* Mobile Hamburger Toggle */}
-        <div className="flex md:hidden items-center gap-2">
-          <button
-            onClick={onToggleLanguage}
-            className="p-2 rounded-lg bg-white/5 text-xs font-bold text-gray-300 border border-white/10"
-          >
-            {isAr ? 'EN' : 'ع'}
-          </button>
+          {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg bg-white/5 text-gray-300 border border-white/10 hover:text-white"
+            className="p-2 rounded-lg bg-white/5 text-gray-300 border border-white/10 md:hidden"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
         </div>
+
       </div>
 
-      {/* Mobile Drawer Menu */}
+      {/* Mobile Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-gray-950/95 border-b border-white/10 px-6 py-6 backdrop-blur-2xl transition-all">
+        <div className="md:hidden bg-[#02091d]/95 border-b border-cyan-500/20 px-6 py-6 backdrop-blur-2xl transition-all">
           <div className="flex flex-col gap-4">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className="text-base font-medium text-gray-200 hover:text-cyan-400 py-1 transition"
+                className="text-base font-medium text-sky-100 hover:text-cyan-400 py-1 transition"
               >
                 {isAr ? link.labelAr : link.labelEn}
               </a>
             ))}
-            <div className="pt-4 border-t border-white/10 flex flex-col gap-3">
-              <a
-                href="https://wa.me/201012345678?text=مرحباً%20Texora"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold text-sm shadow-md"
-              >
-                <MessageSquare className="w-4 h-4" />
-                <span>{isAr ? 'تواصل معنا واتساب' : 'WhatsApp Us'}</span>
-              </a>
-            </div>
           </div>
         </div>
       )}

@@ -12,95 +12,126 @@ export const ThreeCanvas: React.FC<ThreeCanvasProps> = ({ scrollY }) => {
     const mount = mountRef.current;
     if (!mount) return;
 
-    // Scene, Camera, Renderer
+    // Deep Royal Blue Fog & Scene
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x030712, 0.0012);
+    scene.fog = new THREE.FogExp2(0x02091d, 0.0015);
 
     const camera = new THREE.PerspectiveCamera(
-      60,
+      65,
       window.innerWidth / window.innerHeight,
       0.1,
-      1000
+      1200
     );
-    camera.position.z = 80;
+    camera.position.z = 90;
+    camera.position.y = 0;
 
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({
+      alpha: true,
+      antialias: true,
+      powerPreference: 'high-performance',
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mount.appendChild(renderer.domElement);
 
-    // Particle Stars
-    const particleCount = 1200;
+    // ================= 1. GEOMETRIC WIREFRAME PERSPECTIVE FLOOR =================
+    const gridHelper = new THREE.GridHelper(300, 40, 0x38bdf8, 0x1e3a8a);
+    gridHelper.position.y = -45;
+    (gridHelper.material as THREE.Material).transparent = true;
+    (gridHelper.material as THREE.Material).opacity = 0.35;
+    scene.add(gridHelper);
+
+    // Geometric Wireframe Ceiling
+    const ceilingGrid = new THREE.GridHelper(300, 40, 0x60a5fa, 0x172554);
+    ceilingGrid.position.y = 45;
+    (ceilingGrid.material as THREE.Material).transparent = true;
+    (ceilingGrid.material as THREE.Material).opacity = 0.22;
+    scene.add(ceilingGrid);
+
+    // ================= 2. FLOATING GEOMETRIC WIREFRAME POLYHEDRA =================
+    // Large Icosahedron
+    const icoGeo = new THREE.IcosahedronGeometry(18, 1);
+    const icoMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.25,
+    });
+    const icoMesh = new THREE.Mesh(icoGeo, icoMat);
+    icoMesh.position.set(-45, 10, -30);
+    scene.add(icoMesh);
+
+    // Rotating Octahedron
+    const octGeo = new THREE.OctahedronGeometry(14, 0);
+    const octMat = new THREE.MeshBasicMaterial({
+      color: 0x60a5fa,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.28,
+    });
+    const octMesh = new THREE.Mesh(octGeo, octMat);
+    octMesh.position.set(48, -12, -20);
+    scene.add(octMesh);
+
+    // Concentric Cybernetic Rings
+    const ringGeo = new THREE.TorusGeometry(36, 0.4, 16, 120);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0x0284c7,
+      wireframe: true,
+      transparent: true,
+      opacity: 0.2,
+    });
+    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    ringMesh.rotation.x = Math.PI / 2.5;
+    scene.add(ringMesh);
+
+    // ================= 3. CONNECTED GEOMETRIC STARFIELD & NODES =================
+    const particleCount = 800;
     const geometry = new THREE.BufferGeometry();
     const positions = new Float32Array(particleCount * 3);
     const colors = new Float32Array(particleCount * 3);
 
-    const color1 = new THREE.Color(0x38bdf8); // Cyan
-    const color2 = new THREE.Color(0xa855f7); // Purple
-    const color3 = new THREE.Color(0xffffff); // White
+    const cCyan = new THREE.Color(0x38bdf8);
+    const cRoyal = new THREE.Color(0x60a5fa);
+    const cLight = new THREE.Color(0xdbeafe);
 
     for (let i = 0; i < particleCount; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 350;
+      positions[i * 3] = (Math.random() - 0.5) * 400;
       positions[i * 3 + 1] = (Math.random() - 0.5) * 350;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 350;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 400;
 
-      const mixedColor = i % 3 === 0 ? color1 : i % 3 === 1 ? color2 : color3;
-      colors[i * 3] = mixedColor.r;
-      colors[i * 3 + 1] = mixedColor.g;
-      colors[i * 3 + 2] = mixedColor.b;
+      const c = i % 3 === 0 ? cCyan : i % 3 === 1 ? cRoyal : cLight;
+      colors[i * 3] = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
     }
 
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
 
     const material = new THREE.PointsMaterial({
-      size: 1.8,
+      size: 2.2,
       vertexColors: true,
       transparent: true,
-      opacity: 0.65,
+      opacity: 0.75,
       blending: THREE.AdditiveBlending,
     });
 
     const particles = new THREE.Points(geometry, material);
     scene.add(particles);
 
-    // Subtle 3D Geometric Rings for cybernetic depth
-    const ringGeo = new THREE.TorusGeometry(32, 0.3, 16, 100);
-    const ringMat = new THREE.MeshBasicMaterial({
-      color: 0x38bdf8,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.12,
-    });
-    const ring1 = new THREE.Mesh(ringGeo, ringMat);
-    ring1.rotation.x = Math.PI / 3;
-    scene.add(ring1);
-
-    const ring2 = new THREE.Mesh(
-      new THREE.TorusGeometry(48, 0.2, 16, 100),
-      new THREE.MeshBasicMaterial({
-        color: 0xa855f7,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.08,
-      })
-    );
-    ring2.rotation.y = Math.PI / 4;
-    scene.add(ring2);
-
-    // Mouse Interaction
+    // Mouse Tracking
     let mouseX = 0;
     let mouseY = 0;
     let targetX = 0;
     let targetY = 0;
 
     const handleMouseMove = (e: MouseEvent) => {
-      mouseX = (e.clientX - window.innerWidth / 2) * 0.05;
-      mouseY = (e.clientY - window.innerHeight / 2) * 0.05;
+      mouseX = (e.clientX - window.innerWidth / 2) * 0.04;
+      mouseY = (e.clientY - window.innerHeight / 2) * 0.04;
     };
     window.addEventListener('mousemove', handleMouseMove);
 
-    // Window Resize
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -110,7 +141,7 @@ export const ThreeCanvas: React.FC<ThreeCanvasProps> = ({ scrollY }) => {
 
     // Animation Loop
     let animationFrameId: number;
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
@@ -120,18 +151,26 @@ export const ThreeCanvas: React.FC<ThreeCanvasProps> = ({ scrollY }) => {
       targetX += (mouseX - targetX) * 0.05;
       targetY += (mouseY - targetY) * 0.05;
 
-      particles.rotation.y = elapsedTime * 0.03 + targetX * 0.002;
-      particles.rotation.x = elapsedTime * 0.015 + targetY * 0.002;
+      // Rotate geometric objects
+      icoMesh.rotation.x = elapsedTime * 0.12;
+      icoMesh.rotation.y = elapsedTime * 0.18;
 
-      ring1.rotation.z = elapsedTime * 0.08;
-      ring1.rotation.y = elapsedTime * 0.04;
+      octMesh.rotation.y = -elapsedTime * 0.2;
+      octMesh.rotation.z = elapsedTime * 0.15;
 
-      ring2.rotation.z = -elapsedTime * 0.05;
-      ring2.rotation.x = elapsedTime * 0.06;
+      ringMesh.rotation.z = elapsedTime * 0.05;
 
-      // Adjust camera with scroll depth
-      camera.position.y = -(scrollY * 0.03);
-      camera.position.x = targetX * 0.5;
+      // Grid flowing movement (Infinite highway effect)
+      gridHelper.position.z = (elapsedTime * 8) % 20;
+      ceilingGrid.position.z = (elapsedTime * 8) % 20;
+
+      // Particle constellation rotation
+      particles.rotation.y = elapsedTime * 0.02 + targetX * 0.001;
+      particles.rotation.x = elapsedTime * 0.01 + targetY * 0.001;
+
+      // Camera responds smoothly to scroll
+      camera.position.y = -(scrollY * 0.025);
+      camera.position.x = targetX * 0.4;
 
       renderer.render(scene, camera);
     };
@@ -147,6 +186,10 @@ export const ThreeCanvas: React.FC<ThreeCanvasProps> = ({ scrollY }) => {
       }
       geometry.dispose();
       material.dispose();
+      icoGeo.dispose();
+      icoMat.dispose();
+      octGeo.dispose();
+      octMat.dispose();
       ringGeo.dispose();
       ringMat.dispose();
       renderer.dispose();

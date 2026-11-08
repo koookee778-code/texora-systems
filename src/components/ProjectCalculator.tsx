@@ -89,7 +89,7 @@ export const ProjectCalculator: React.FC<ProjectCalculatorProps> = ({ language }
         </p>
       </div>
 
-      <div className="glow-card rounded-3xl bg-gray-950/90 border border-white/10 p-6 sm:p-10 lg:p-12 backdrop-blur-2xl">
+      <div className="glow-card rounded-3xl bg-gradient-to-b from-blue-950/40 via-[#04163d]/60 to-[#02091d]/90 border border-cyan-500/20 p-6 sm:p-10 lg:p-12 backdrop-blur-2xl">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
           
           {/* Options Selectors */}

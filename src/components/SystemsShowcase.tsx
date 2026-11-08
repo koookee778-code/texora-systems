@@ -188,7 +188,7 @@ export const SystemsShowcase: React.FC<SystemsShowcaseProps> = ({ language }) =>
       </div>
 
       {/* Interactive Tabs Navigator */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-12 bg-gray-900/40 p-2 rounded-2xl border border-white/5 backdrop-blur-md">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-12 bg-blue-950/40 p-2 rounded-2xl border border-cyan-500/20 backdrop-blur-md">
         {services.map((item, index) => {
           const isSelected = activeTab === index;
           return (
@@ -197,14 +197,14 @@ export const SystemsShowcase: React.FC<SystemsShowcaseProps> = ({ language }) =>
               onClick={() => setActiveTab(index)}
               className={`flex flex-col items-center justify-center p-3 sm:p-4 rounded-xl text-center transition-all duration-300 relative ${
                 isSelected
-                  ? 'bg-gradient-to-b from-gray-800 to-gray-900 text-white shadow-xl border border-white/10 scale-102'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'
+                  ? 'bg-gradient-to-b from-blue-900 to-[#04163d] text-white shadow-xl border border-cyan-400/30 scale-102'
+                  : 'text-sky-200/70 hover:text-white hover:bg-white/5'
               }`}
             >
               {isSelected && (
                 <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-cyan-400 shadow-[0_0_8px_#38bdf8]" />
               )}
-              <div className="w-8 h-8 rounded-lg mb-2 flex items-center justify-center bg-white/5 text-cyan-400">
+              <div className="w-8 h-8 rounded-lg mb-2 flex items-center justify-center bg-cyan-500/10 text-cyan-400">
                 {index === 0 && <Pill className="w-5 h-5" />}
                 {index === 1 && <ShoppingBag className="w-5 h-5" />}
                 {index === 2 && <GraduationCap className="w-5 h-5" />}
@@ -221,7 +221,7 @@ export const SystemsShowcase: React.FC<SystemsShowcaseProps> = ({ language }) =>
       </div>
 
       {/* Featured Service Card Details */}
-      <div className="relative glow-card rounded-3xl bg-gradient-to-b from-gray-900/80 to-gray-950/90 border border-white/10 p-6 sm:p-10 lg:p-12 overflow-hidden backdrop-blur-xl">
+      <div className="relative glow-card rounded-3xl bg-gradient-to-b from-blue-950/50 via-[#04163d]/70 to-[#02091d]/90 border border-cyan-500/20 p-6 sm:p-10 lg:p-12 overflow-hidden backdrop-blur-xl">
         
         {/* Ambient Gradient Corner Glow */}
         <div className={`absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl ${current.color} opacity-15 rounded-full blur-3xl pointer-events-none`} />
